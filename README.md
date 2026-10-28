@@ -1,6 +1,6 @@
 # Pimple Saudagar Local Business Directory
 
-> A production-ready, enterprise-grade local business directory website (Justdial / WordPress ListingPro equivalent) specifically tailored for **Pimple Saudagar (PCMC, Pune, Maharashtra, India)**, capable of supporting up to 5,000 businesses on a **100% Free-Tier cloud stack** ($0 monthly hosting fees).
+> A production-ready, enterprise-grade local business directory platform specifically tailored for **Pimple Saudagar (PCMC, Pune, Maharashtra, India)**, capable of supporting up to 5,000 businesses on a **100% Free-Tier cloud stack** ($0 monthly hosting fees).
 
 [![CI Pipeline](https://github.com/pimplesaudagar/directory/actions/workflows/ci.yml/badge.svg)](https://github.com/pimplesaudagar/directory/actions)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15.5.28-black?logo=next.js)](https://nextjs.org/)
