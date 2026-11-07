@@ -69,7 +69,7 @@ export class MediaService {
     const fileExtension = req.fileName.split(".").pop() || "webp";
     const objectKey = `listings/${req.listingId}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExtension}`;
 
-    const publicBase = process.env.NEXT_PUBLIC_STORAGE_PUBLIC_URL || "http://localhost:9000/pimple-saudagar-media";
+    const publicBase = process.env.NEXT_PUBLIC_STORAGE_PUBLIC_URL || "http://localhost:9000/directory-media";
     const publicUrl = `${publicBase}/${objectKey}`;
 
     // Create pending media record

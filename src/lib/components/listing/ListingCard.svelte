@@ -131,7 +131,7 @@
       {/if}
       {#if canWhatsapp}
         <a
-          href={`https://wa.me/${cleanWhatsapp}?text=Hi%2C%20found%20your%20business%20on%20Pimple%20Saudagar%20Directory`}
+          href={`https://wa.me/${cleanWhatsapp}?text=Hi%2C%20found%20your%20business%20on%20the%20Local%20Business%20Directory`}
           target="_blank"
           rel="noopener noreferrer"
           class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition"

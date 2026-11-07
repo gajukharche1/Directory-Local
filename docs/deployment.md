@@ -1,6 +1,6 @@
 # 100% Free-Tier Production Deployment Guide
 
-This guide details step-by-step instructions to deploy the Pimple Saudagar Local Business Directory to production at **$0 monthly cloud infrastructure cost** while supporting up to 5,000 businesses and 100,000 monthly visits.
+This guide details step-by-step instructions to deploy the Local Business Directory to production at **$0 monthly cloud infrastructure cost** while supporting up to 5,000 businesses and 100,000 monthly visits.
 
 ---
 
@@ -19,7 +19,7 @@ This guide details step-by-step instructions to deploy the Pimple Saudagar Local
 ## Step 1: PostgreSQL Setup (Neon / Supabase)
 
 1. Create a free account at [neon.tech](https://neon.tech) or [supabase.com](https://supabase.com).
-2. Create a project named `pimplesaudagar-directory` in the `ap-south-1` (Mumbai) region for lowest latency to Pune/PCMC.
+2. Create a project named `local-business-directory` in the `ap-south-1` (Mumbai) region for lowest latency to Pune/PCMC.
 3. Copy the pooled connection string:
    ```env
    DATABASE_URL="postgresql://user:password@ep-xyz-pooler.ap-south-1.aws.neon.tech/directory?sslmode=require&pgbouncer=true"
@@ -36,12 +36,12 @@ This guide details step-by-step instructions to deploy the Pimple Saudagar Local
 ## Step 2: Cloudflare R2 Media Storage Setup
 
 1. Log into Cloudflare Dashboard -> **R2 Object Storage**.
-2. Create a bucket named `pimplesaudagar-media`.
+2. Create a bucket named `localdirectory-media`.
 3. Configure Bucket CORS under Settings:
    ```json
    [
      {
-       "AllowedOrigins": ["https://pimplesaudagar.org", "http://localhost:3000"],
+       "AllowedOrigins": ["https://example.com", "http://localhost:3000"],
        "AllowedMethods": ["GET", "PUT", "HEAD"],
        "AllowedHeaders": ["*"],
        "ExposeHeaders": ["ETag"],
@@ -74,7 +74,7 @@ This guide details step-by-step instructions to deploy the Pimple Saudagar Local
    - `AUTH_SECRET` (generate with `openssl rand -hex 32`)
    - `ENCRYPTION_KEY` (generate with `openssl rand -hex 32`)
    - `CRON_SECRET` (generate with `openssl rand -hex 16`)
-   - `NEXT_PUBLIC_APP_URL` (`https://pimplesaudagar.org`)
+   - `NEXT_PUBLIC_APP_URL` (`https://example.com`)
    - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `NEXT_PUBLIC_R2_PUBLIC_URL`
    - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
    - `RESEND_API_KEY` (free tier: 3,000 emails / month)
@@ -85,9 +85,9 @@ This guide details step-by-step instructions to deploy the Pimple Saudagar Local
 ## Step 5: Background Cron Setup
 
 In Vercel or GitHub Actions, configure daily scheduled pings to:
-- `https://pimplesaudagar.org/api/cron/plan-expiry`
-- `https://pimplesaudagar.org/api/cron/repair-aggregates`
-- `https://pimplesaudagar.org/api/cron/cleanup-sessions`
+- `https://example.com/api/cron/plan-expiry`
+- `https://example.com/api/cron/repair-aggregates`
+- `https://example.com/api/cron/cleanup-sessions`
 
 Headers:
 `Authorization: Bearer <CRON_SECRET>`

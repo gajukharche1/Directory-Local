@@ -15,11 +15,11 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
     <div class="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-3.5 py-1 text-xs font-semibold text-indigo-700 shadow-sm mb-6">
       <Sparkles class="h-3.5 w-3.5 text-indigo-600" />
-      <span>Pimple Saudagar's Trusted Community Directory</span>
+      <span>Your Trusted Local Business Directory</span>
     </div>
 
     <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 max-w-4xl mx-auto leading-tight">
-      Find Verified Local Services in <span class="text-indigo-600">Pimple Saudagar</span>
+      Find Verified Local Services in <span class="text-indigo-600">Local Business</span>
     </h1>
 
     <p class="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto">
@@ -42,7 +42,7 @@
         <div class="flex-1 flex items-center gap-3 px-3 py-1.5">
           <MapPin class="h-5 w-5 text-indigo-600 shrink-0" />
           <select name="location" class="w-full bg-transparent text-sm text-slate-700 outline-none cursor-pointer">
-            <option value="all">All Pimple Saudagar</option>
+            <option value="all">All Locations</option>
             {#each data.locations as loc}
               <option value={loc.slug}>{loc.name}</option>
             {/each}
@@ -97,7 +97,7 @@
     <div class="flex items-center justify-between mb-8">
       <div>
         <h2 class="text-2xl font-bold tracking-tight text-slate-900">Explore Top Categories</h2>
-        <p class="text-sm text-slate-500 mt-1">Find neighborhood specialists across Pimple Saudagar</p>
+        <p class="text-sm text-slate-500 mt-1">Find neighborhood specialists across the local area</p>
       </div>
       <a href="/search" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
         <span>View all categories</span>
@@ -116,7 +116,7 @@
 <!-- Localities Section -->
 <section class="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
   <h2 class="text-2xl font-bold tracking-tight text-slate-900 mb-2">Explore by Neighborhood</h2>
-  <p class="text-sm text-slate-500 mb-8">Navigate businesses across key localities in Pimple Saudagar</p>
+  <p class="text-sm text-slate-500 mb-8">Navigate businesses across key localities in the local area</p>
 
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
     {#each data.locations as loc}
@@ -136,7 +136,7 @@
 <footer class="border-t border-slate-200 bg-slate-900 text-slate-400 py-12">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6 text-xs">
     <div>
-      <span class="font-bold text-white text-sm">Pimple Saudagar Local Directory</span>
+      <span class="font-bold text-white text-sm">Local Business Directory</span>
       <p class="mt-1 text-slate-500">Supporting local businesses and residents across PCMC, Pune, Maharashtra.</p>
     </div>
     <div class="flex gap-6 text-slate-400 font-medium">

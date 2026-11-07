@@ -20,7 +20,7 @@ jobs:
       AUTH_SECRET: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
       ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
       CRON_SECRET: "dev_cron_secret_key_12345"
-      NEXT_PUBLIC_APP_URL: "https://pimplesaudagar.org"
+      NEXT_PUBLIC_APP_URL: "https://example.com"
       NODE_ENV: "production"
 
     steps:

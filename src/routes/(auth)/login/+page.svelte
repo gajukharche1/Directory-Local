@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head>
-  <title>Sign In | Pimple Saudagar Directory</title>
+  <title>Sign In | Local Business Directory</title>
 </svelte:head>
 
 <div>

@@ -14,10 +14,10 @@
 </script>
 
 <svelte:head>
-  <title>{listing.title} in {listing.locality}, Pimple Saudagar | Reviews & Contact</title>
+  <title>{listing.title} in {listing.locality}, Local Business | Reviews & Contact</title>
   <meta
     name="description"
-    content={`Contact details, opening hours, photos, ratings, and customer reviews for ${listing.title} located at ${listing.locality}, Pimple Saudagar.`}
+    content={`Contact details, opening hours, photos, ratings, and customer reviews for ${listing.title} located at ${listing.locality}, Local Business.`}
   />
   {@html `<script type="application/ld+json">${JSON.stringify(data.localBusinessSchema)}</script>`}
   {@html `<script type="application/ld+json">${JSON.stringify(data.breadcrumbSchema)}</script>`}
@@ -76,7 +76,7 @@
           <span>•</span>
           <div class="flex items-center gap-1">
             <MapPin class="h-3.5 w-3.5 text-slate-400" />
-            <span>{listing.locality}, Pimple Saudagar</span>
+            <span>{listing.locality}, Local Business</span>
           </div>
         </div>
       </div>

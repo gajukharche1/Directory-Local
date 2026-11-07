@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head>
-  <title>Write a Review for {listing.title} | Pimple Saudagar Directory</title>
+  <title>Write a Review for {listing.title} | Local Business Directory</title>
 </svelte:head>
 
 <div class="min-h-screen flex flex-col bg-background">
@@ -21,7 +21,7 @@
           PS
         </div>
         <span class="font-bold tracking-tight text-sm text-foreground">
-          Pimple Saudagar Directory
+          Local Business Directory
         </span>
       </a>
       <a

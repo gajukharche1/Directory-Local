@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head>
-  <title>Reset Password | Pimple Saudagar Directory</title>
+  <title>Reset Password | Local Business Directory</title>
 </svelte:head>
 
 <div>

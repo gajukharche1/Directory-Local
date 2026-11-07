@@ -1,7 +1,7 @@
 {
   "common": {
-    "siteName": "Pimple Saudagar Directory",
-    "tagline": "Discover top local businesses & services in Pimple Saudagar, PCMC",
+    "siteName": "Local Business Directory",
+    "tagline": "Discover top local businesses & services in your local area",
     "searchPlaceholder": "Search restaurants, clinics, gyms, repairs...",
     "search": "Search",
     "explore": "Explore Directory",
@@ -21,7 +21,7 @@
     "admin": "Admin"
   },
   "home": {
-    "heroTitle": "Find Verified Local Services in Pimple Saudagar",
+    "heroTitle": "Find Verified Local Services in the local area",
     "heroSubtitle": "Browse over 5,000 top rated shops, doctors, restaurants, salons & home services across PCMC.",
     "featuredTitle": "Featured & Recommended Businesses",
     "categoriesTitle": "Explore Top Categories",

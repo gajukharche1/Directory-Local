@@ -8,7 +8,7 @@ PROJECT GOAL
 Visitors search, browse by category and location, view business profiles with maps, read and submit reviews, and contact businesses. Business owners claim and manage listings from a dashboard and choose pricing plans. Admins moderate content and manage the whole directory.
 
 PROJECT NAME & CONVENTIONS
-Name: [Pimple Saudagar ]   Package/slug: [pimplesaudagar-slug]   Internal prefix: [PS]
+Name: [Local Business ]   Package/slug: [local-directory-slug]   Internal prefix: [PS]
 Stack pinned to current stable releases at build time.
 
 =====================================================

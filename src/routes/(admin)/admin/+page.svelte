@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-  <title>Admin Overview | Pimple Saudagar Directory</title>
+  <title>Admin Overview | Local Business Directory</title>
 </svelte:head>
 
 <div class="space-y-8">
@@ -19,7 +19,7 @@
       System Overview & Operations
     </h1>
     <p class="text-xs text-muted-foreground mt-0.5">
-      Directory health, moderation queue status, and community activity for Pimple Saudagar
+      Directory health, moderation queue status, and community activity for the local area
     </p>
   </div>
 

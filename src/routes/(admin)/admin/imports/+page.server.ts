@@ -61,7 +61,7 @@ export const actions: Actions = {
               email: rowObj.email || "",
               website: rowObj.website || "",
               address: rowObj.address,
-              locality: rowObj.locality || "Pimple Saudagar",
+              locality: rowObj.locality || "Local Business",
               landmark: rowObj.landmark || "",
               description: rowObj.description || "",
               priceRange: rowObj.pricerange ? parseInt(rowObj.pricerange, 10) : 2,
@@ -119,11 +119,11 @@ export const actions: Actions = {
             title: item.title.trim(),
             description:
               item.description?.trim() ||
-              `<p>${item.title} is a verified business in Pimple Saudagar, PCMC.</p>`,
+              `<p>${item.title} is a verified business in your local area.</p>`,
             status: ListingStatus.published,
             publishedAt: new Date(),
             address: item.address.trim(),
-            locality: item.locality?.trim() || "Pimple Saudagar",
+            locality: item.locality?.trim() || "Local Business",
             landmark: item.landmark?.trim() || null,
             phone: item.phone?.trim() || null,
             whatsapp: item.whatsapp?.trim() || null,

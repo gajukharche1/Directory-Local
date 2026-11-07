@@ -4,7 +4,7 @@ import { env } from "$lib/config/env";
 import { ListingStatus } from "@prisma/client";
 
 export const GET: RequestHandler = async () => {
-  const baseUrl = env.NEXT_PUBLIC_APP_URL || "https://pimplesaudagar.org";
+  const baseUrl = env.NEXT_PUBLIC_APP_URL || "https://example.com";
 
   const staticUrls = [
     { loc: `${baseUrl}/`, priority: "1.0", changefreq: "daily" },

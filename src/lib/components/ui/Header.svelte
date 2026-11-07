@@ -14,7 +14,7 @@
       </div>
       <div>
         <span class="font-extrabold tracking-tight text-base text-slate-900 block leading-none">
-          Pimple Saudagar
+          Local Business
         </span>
         <span class="text-[10px] font-semibold text-slate-400 tracking-wider uppercase">
           Local Directory

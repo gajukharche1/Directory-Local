@@ -71,7 +71,7 @@
 
     {#if whatsappAllowed && cleanWhatsapp}
       <a
-        href={`https://wa.me/${cleanWhatsapp}?text=Hi%2C%20I%20found%20your%20business%20on%20Pimple%20Saudagar%20Directory`}
+        href={`https://wa.me/${cleanWhatsapp}?text=Hi%2C%20I%20found%20your%20business%20on%20the%20Local%20Business%20Directory`}
         target="_blank"
         rel="noopener noreferrer"
         class="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"

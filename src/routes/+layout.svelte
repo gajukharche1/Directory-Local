@@ -7,10 +7,10 @@
 </script>
 
 <svelte:head>
-  <title>Pimple Saudagar Local Business Directory | Find Top Services Nearby</title>
+  <title>Local Business Directory | Find Top Services Nearby</title>
   <meta
     name="description"
-    content="Discover verified local businesses, restaurants, healthcare, clinics, and professional services across Pimple Saudagar, PCMC, Pune."
+    content="Discover verified local businesses, restaurants, healthcare, clinics, and professional services across your city and neighborhood."
   />
 </svelte:head>
 

@@ -10,11 +10,11 @@
 </script>
 
 <svelte:head>
-  <title>{category.name} in Pimple Saudagar | Top Rated Services & Businesses</title>
+  <title>{category.name} in the local area | Top Rated Services & Businesses</title>
   <meta
     name="description"
     content={category.description ||
-      `Find the best ${category.name.toLowerCase()} in Pimple Saudagar with ratings, contact info, and directions.`}
+      `Find the best ${category.name.toLowerCase()} in the local area with ratings, contact info, and directions.`}
   />
   <link rel="canonical" href={`/category/${data.slugPath}`} />
 </svelte:head>
@@ -39,7 +39,7 @@
     <!-- Category Header -->
     <div class="mb-8 border-b pb-6">
       <h1 class="text-3xl font-extrabold tracking-tight text-foreground">
-        {category.name} in Pimple Saudagar
+        {category.name} in the local area
       </h1>
       {#if category.description}
         <p class="text-sm text-muted-foreground mt-2 max-w-2xl">
@@ -77,7 +77,7 @@
           <Folder class="h-10 w-10 text-muted-foreground/60 mx-auto mb-2" />
           <h3 class="font-bold text-sm text-foreground">No listings found yet</h3>
           <p class="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-            Are you a local business owner providing {category.name.toLowerCase()} in Pimple Saudagar?
+            Are you a local business owner providing {category.name.toLowerCase()} in the local area?
           </p>
           <a
             href="/submit"

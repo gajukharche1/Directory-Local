@@ -47,7 +47,7 @@ export class SeoService {
       address: {
         "@type": "PostalAddress",
         streetAddress: listing.address,
-        addressLocality: listing.locality || "Pimple Saudagar",
+        addressLocality: listing.locality || "Local Business",
         addressRegion: "Maharashtra",
         postalCode: "411027",
         addressCountry: "IN",

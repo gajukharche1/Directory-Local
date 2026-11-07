@@ -26,7 +26,7 @@ export class TaxonomyService {
   }
 
   /**
-   * Retrieves featured neighborhoods/localities in Pimple Saudagar
+   * Retrieves featured neighborhoods/localities in the local area
    */
   static async getFeaturedLocations() {
     try {
@@ -69,7 +69,7 @@ export class TaxonomyService {
 
   /**
    * Resolves a nested location hierarchy by slug path
-   * e.g. ['pimple-saudagar', 'kunal-icon-road']
+   * e.g. ['local-area', 'kunal-icon-road']
    */
   static async getLocationBySlugPath(slugs: string[]) {
     if (slugs.length === 0) return null;

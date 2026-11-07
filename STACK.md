@@ -1,7 +1,7 @@
-# Technical Stack & Dependency Matrix: Pimple Saudagar Directory (PS)
+# Technical Stack & Dependency Matrix: Local Business Directory (PS)
 
-**Project Name**: Pimple Saudagar Local Business Directory  
-**Package/Slug**: `pimplesaudagar-slug`  
+**Project Name**: Local Business Directory  
+**Package/Slug**: `local-directory-slug`  
 **Internal Prefix**: `PS`  
 **Architecture**: Next.js App Router (RSC by default) + PostgreSQL + Redis
 

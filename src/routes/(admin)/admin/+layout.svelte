@@ -26,7 +26,7 @@
           </div>
           <div>
             <span class="font-bold tracking-tight text-sm text-foreground block leading-none">
-              Pimple Saudagar
+              Local Business
             </span>
             <span class="text-[10px] text-red-600 uppercase font-bold tracking-wider">
               Admin Console

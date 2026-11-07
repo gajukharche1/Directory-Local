@@ -136,6 +136,6 @@
   <!-- Floating Info Pill -->
   <div class="absolute bottom-3 right-3 z-20 bg-white/90 px-3 py-1 rounded-full text-[11px] font-semibold text-slate-600 shadow-sm backdrop-blur flex items-center gap-1.5 border border-slate-200">
     <MapPin class="h-3 w-3 text-indigo-600" />
-    <span>Pimple Saudagar, PCMC</span>
+    <span>Local Business Directory</span>
   </div>
 </div>

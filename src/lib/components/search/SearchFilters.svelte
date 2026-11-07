@@ -72,7 +72,7 @@
         value={currentLocation}
         class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
       >
-        <option value="all">All Pimple Saudagar</option>
+        <option value="all">All Locations</option>
         {#each locations as l}
           <option value={l.slug}>{l.name}</option>
         {/each}

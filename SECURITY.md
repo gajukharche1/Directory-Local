@@ -1,12 +1,12 @@
 # Security Policy & OWASP ASVS Level 2 Verification
 
-The Pimple Saudagar Directory platform is engineered to comply with **OWASP Application Security Verification Standard (ASVS) Level 2** and industry best practices.
+The Local Business Directory platform is engineered to comply with **OWASP Application Security Verification Standard (ASVS) Level 2** and industry best practices.
 
 ---
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability, please send an advisory email to `security@pimplesaudagar.org`. Do not open public GitHub issues for security vulnerabilities. We will acknowledge reports within 24 hours and provide an estimated remediation timeline.
+If you discover a security vulnerability, please send an advisory email to `security@directory.local`. Do not open public GitHub issues for security vulnerabilities. We will acknowledge reports within 24 hours and provide an estimated remediation timeline.
 
 ---
 

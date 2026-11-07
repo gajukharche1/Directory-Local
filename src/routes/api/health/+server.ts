@@ -10,7 +10,7 @@ export const GET: RequestHandler = async () => {
       {
         status: "healthy",
         timestamp: new Date().toISOString(),
-        service: "pimplesaudagar-directory-svelte",
+        service: "local-business-directory",
         version: "1.0.0",
       },
       { status: 200 }

@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
   const listing = await ListingService.getBySlug(params.slug);
 
   if (!listing) {
-    throw error(404, "Business Not Found in Pimple Saudagar Directory");
+    throw error(404, "Business Not Found in Local Business Directory");
   }
 
   // View counter increment (fire-and-forget)

@@ -6,10 +6,10 @@
 </script>
 
 <svelte:head>
-  <title>Business Pricing Plans | Pimple Saudagar Directory</title>
+  <title>Business Pricing Plans | Local Business Directory</title>
   <meta
     name="description"
-    content="Explore transparent pricing plans for local businesses in Pimple Saudagar. Boost your neighborhood reach, leads, and customer reviews."
+    content="Explore transparent pricing plans for local businesses in the local area. Boost your neighborhood reach, leads, and customer reviews."
   />
 </svelte:head>
 
@@ -22,7 +22,7 @@
         <span>TRANSPARENT NEIGHBORHOOD PRICING</span>
       </div>
       <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-        Promote Your Business in Pimple Saudagar
+        Promote Your Business in the local area
       </h1>
       <p class="mt-3 text-sm text-muted-foreground">
         Choose the right visibility plan to connect with thousands of local residents and high-intent customers in Kokane Chowk, Kunal Icon Rd, and Shivar Chowk.
@@ -120,10 +120,10 @@
       <div class="space-y-4 text-xs">
         <div>
           <h4 class="font-bold text-foreground mb-1">
-            How does business verification work in Pimple Saudagar?
+            How does business verification work in the local area?
           </h4>
           <p class="text-muted-foreground leading-relaxed">
-            When you claim or submit a business listing, our local moderation team verifies the physical address and contact phone in Pimple Saudagar within 24 hours before activating the Verified badge.
+            When you claim or submit a business listing, our local moderation team verifies the physical address and contact phone in the local area within 24 hours before activating the Verified badge.
           </p>
         </div>
 

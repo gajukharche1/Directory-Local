@@ -6,13 +6,13 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: pimplesaudagar_dev
+      POSTGRES_DB: directory_dev
     ports:
       - "5432:5432"
     volumes:
       - ps-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d pimplesaudagar_dev"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d directory_dev"]
       interval: 5s
       timeout: 5s
       retries: 5

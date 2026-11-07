@@ -13,10 +13,10 @@
 </script>
 
 <svelte:head>
-  <title>Claim & Verify {listing.title} | Pimple Saudagar Directory</title>
+  <title>Claim & Verify {listing.title} | Local Business Directory</title>
   <meta
     name="description"
-    content="Claim ownership of {listing.title} in {listing.locality}, Pimple Saudagar. Manage reviews, update business hours, and connect with local customers."
+    content="Claim ownership of {listing.title} in {listing.locality}, Local Business. Manage reviews, update business hours, and connect with local customers."
   />
 </svelte:head>
 
@@ -29,7 +29,7 @@
           PS
         </div>
         <span class="font-bold tracking-tight text-sm text-foreground">
-          Pimple Saudagar Directory
+          Local Business Directory
         </span>
       </a>
       <a
@@ -105,7 +105,7 @@
               Claim Ownership of {listing.title}
             </h1>
             <p class="text-xs text-muted-foreground mt-1">
-              Located at {listing.address}, {listing.locality}, Pimple Saudagar
+              Located at {listing.address}, {listing.locality}, Local Business
             </p>
           </div>
 

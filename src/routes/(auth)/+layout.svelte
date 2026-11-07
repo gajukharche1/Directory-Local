@@ -12,7 +12,7 @@
       class="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground mb-6 transition-colors"
     >
       <ArrowLeft class="h-3.5 w-3.5" />
-      <span>Back to Pimple Saudagar Directory</span>
+      <span>Back to Local Business Directory</span>
     </a>
 
     <div class="flex items-center gap-2 mb-2">
@@ -21,7 +21,7 @@
       </div>
       <div>
         <span class="font-bold tracking-tight text-lg text-foreground block leading-none">
-          Pimple Saudagar
+          Local Business
         </span>
         <span class="text-[10px] tracking-wider text-muted-foreground uppercase font-semibold">
           Hyperlocal Business Directory

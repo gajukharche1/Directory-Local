@@ -10,11 +10,11 @@
 </script>
 
 <svelte:head>
-  <title>Businesses & Services in {location.name}, Pimple Saudagar | Directory</title>
+  <title>Businesses & Services in {location.name}, Local Business | Directory</title>
   <meta
     name="description"
     content={location.description ||
-      `Explore top verified shops, doctors, dining, and professional services located at ${location.name}, Pimple Saudagar.`}
+      `Explore top verified shops, doctors, dining, and professional services located at ${location.name}, Local Business.`}
   />
   <link rel="canonical" href={`/location/${data.slugPath}`} />
 </svelte:head>
@@ -40,7 +40,7 @@
     <div class="mb-8 border-b pb-6">
       <div class="inline-flex items-center gap-1.5 text-xs font-medium text-primary mb-2">
         <MapPin class="h-3.5 w-3.5" />
-        <span>Pimple Saudagar, PCMC</span>
+        <span>Local Business Directory</span>
       </div>
       <h1 class="text-3xl font-extrabold tracking-tight text-foreground">
         {location.name} Local Businesses

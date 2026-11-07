@@ -13,7 +13,7 @@ const envSchema = z.object({
   DATABASE_URL: z
     .string()
     .url()
-    .default("postgresql://postgres:postgres@localhost:5432/pimplesaudagar_dev?schema=public"),
+    .default("postgresql://postgres:postgres@localhost:5432/directory_dev?schema=public"),
   DIRECT_URL: z.string().url().optional(),
 
   // Redis Cache & Rate Limiting (Upstash or local)
@@ -25,12 +25,12 @@ const envSchema = z.object({
   STORAGE_ENDPOINT: z.string().optional(),
   STORAGE_ACCESS_KEY: z.string().optional(),
   STORAGE_SECRET_KEY: z.string().optional(),
-  STORAGE_BUCKET: z.string().default("pimple-saudagar-media"),
-  NEXT_PUBLIC_STORAGE_PUBLIC_URL: z.string().url().default("http://localhost:9000/pimple-saudagar-media"),
+  STORAGE_BUCKET: z.string().default("directory-media"),
+  NEXT_PUBLIC_STORAGE_PUBLIC_URL: z.string().url().default("http://localhost:9000/directory-media"),
 
   // Email (Resend)
   RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM: z.string().default("Pimple Saudagar Directory <noreply@pimplesaudagar.local>"),
+  EMAIL_FROM: z.string().default("Local Business Directory <noreply@directory.local>"),
 
   // Payments (Razorpay & Stripe)
   RAZORPAY_KEY_ID: z.string().optional(),

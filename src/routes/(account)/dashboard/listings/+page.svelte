@@ -32,7 +32,7 @@
       <Store class="h-10 w-10 mx-auto text-muted-foreground/60 mb-2" />
       <h3 class="font-bold text-sm text-foreground">No listings found</h3>
       <p class="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-        You have not listed or claimed any business in Pimple Saudagar yet.
+        You have not listed or claimed any business in the local area yet.
       </p>
       <a
         href="/submit"

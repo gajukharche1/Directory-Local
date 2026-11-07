@@ -25,7 +25,7 @@
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-foreground">Directory Listings</h1>
       <p class="text-xs text-muted-foreground mt-0.5">
-        Manage and moderate all {data.totalCount} businesses registered in Pimple Saudagar
+        Manage and moderate all {data.totalCount} businesses registered in the local area
       </p>
     </div>
 

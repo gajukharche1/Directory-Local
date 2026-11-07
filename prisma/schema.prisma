@@ -252,7 +252,7 @@ model Listing {
   email          String?           // Private contact email
   website        String?
   address        String
-  locality       String            // Local neighborhood in Pimple Saudagar
+  locality       String            // Local neighborhood / locality
   landmark       String?
   latitude       Decimal?          @db.Decimal(10, 8)
   longitude      Decimal?          @db.Decimal(11, 8)

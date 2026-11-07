@@ -1,15 +1,15 @@
-# Project Specification: Pimple Saudagar Directory (PS)
+# Project Specification: Local Business Directory (PS)
 
 **Document Version**: 1.0.0  
 **Status**: APPROVED & LOCKED  
 **Application Type**: Hyperlocal Business Directory (Justdial / WordPress ListingPro equivalent)  
-**Target Locale**: Pimple Saudagar, PCMC/Pune, Maharashtra, India (5,000 listings capacity)
+**Target Locale**: Local Business Directory/Pune, Maharashtra, India (5,000 listings capacity)
 
 ---
 
 ## 1. System Vision & Objectives
 
-The Pimple Saudagar Directory provides a lightning-fast, production-grade local discovery engine for residents and businesses of Pimple Saudagar. It replaces traditional WordPress/PHP directory themes with a modern, high-performance Next.js App Router application backed by PostgreSQL, adhering to strict OWASP ASVS Level 2 standards and India's Digital Personal Data Protection (DPDP) Act 2023.
+The Local Business Directory provides a lightning-fast, production-grade local discovery engine for residents and businesses of Local Business. It replaces traditional WordPress/PHP directory themes with a modern, high-performance Next.js App Router application backed by PostgreSQL, adhering to strict OWASP ASVS Level 2 standards and India's Digital Personal Data Protection (DPDP) Act 2023.
 
 ### Core User Personas
 1. **Public Visitor**: Searches services, browses categorized directories, checks live "Open Now" status, views Leaflet maps, reads verified reviews, and submits enquiries.
@@ -44,7 +44,7 @@ The Pimple Saudagar Directory provides a lightning-fast, production-grade local 
 | `email` | VARCHAR(255) | Private contact email (hidden behind form by default) |
 | `website` | VARCHAR(255) | Verified HTTPS URL |
 | `address` | TEXT | Street address |
-| `locality` | VARCHAR(100) | Primary neighborhood/locality in Pimple Saudagar |
+| `locality` | VARCHAR(100) | Primary neighborhood/locality in the local area |
 | `landmark` | VARCHAR(100) | Prominent landmark |
 | `latitude` | DECIMAL(10,8) | Spatial coordinate (WGS84) |
 | `longitude`| DECIMAL(11,8) | Spatial coordinate (WGS84) |
@@ -53,7 +53,7 @@ The Pimple Saudagar Directory provides a lightning-fast, production-grade local 
 | `socialLinks`| JSONB | Allowlisted keys (`facebook`, `instagram`, `linkedin`, `youtube`, `x`) |
 
 ### 2.2 Categories (`categories`) & Locations (`locations`)
-- **Hierarchical Self-Relation**: `parentId` allows infinite nesting (e.g., *Automotive > Car Repair > Denting & Painting* or *Pimple Saudagar > Kunal Icon Road > Roseland Residency*).
+- **Hierarchical Self-Relation**: `parentId` allows infinite nesting (e.g., *Automotive > Car Repair > Denting & Painting* or *Local Business > Kunal Icon Road > Roseland Residency*).
 - **Listing Relations**: Many-to-Many junction tables (`listing_categories`, `listing_locations`).
 - **Cached Counts**: Real-time published listing counts cached on category and location records.
 

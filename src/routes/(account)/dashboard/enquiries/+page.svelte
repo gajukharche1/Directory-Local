@@ -13,7 +13,7 @@
   <div>
     <h1 class="text-2xl font-bold tracking-tight text-foreground">Customer Leads & Inquiries</h1>
     <p class="text-xs text-muted-foreground mt-0.5">
-      Direct messages and contact requests submitted by residents in Pimple Saudagar
+      Direct messages and contact requests submitted by residents in the local area
     </p>
   </div>
 

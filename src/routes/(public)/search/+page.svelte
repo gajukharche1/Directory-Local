@@ -14,10 +14,10 @@
 </script>
 
 <svelte:head>
-  <title>{data.q ? `Search results for "${data.q}"` : "Search Businesses & Services in Pimple Saudagar | Directory"}</title>
+  <title>{data.q ? `Search results for "${data.q}"` : "Search Businesses & Services in the local area | Directory"}</title>
   <meta
     name="description"
-    content="Search verified businesses, doctors, restaurants, clinics, and shops across Pimple Saudagar, PCMC."
+    content="Search verified businesses, doctors, restaurants, clinics, and shops across your local area."
   />
 </svelte:head>
 
@@ -60,7 +60,7 @@
     <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
       <div>
         <h1 class="text-xl font-bold tracking-tight text-foreground">
-          {data.q ? `Search results for "${data.q}"` : "Explore Businesses in Pimple Saudagar"}
+          {data.q ? `Search results for "${data.q}"` : "Explore Businesses in the local area"}
         </h1>
         <p class="text-xs text-muted-foreground mt-0.5">
           Showing {listings.length} of {total} verified local businesses

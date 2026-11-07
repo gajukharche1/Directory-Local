@@ -3,7 +3,7 @@ import { PrismaClient, UserRole, ListingStatus, ClaimStatus, ReviewStatus } from
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Starting Pimple Saudagar Directory Database Seed...");
+  console.log("🌱 Starting Local Business Directory Database Seed...");
 
   // 1. Clean existing records in sequence
   console.log("🧹 Clearing old data...");
@@ -92,11 +92,11 @@ async function main() {
   });
 
   // 3. Create Hierarchical Locations
-  console.log("📍 Seeding locations in Pimple Saudagar...");
+  console.log("📍 Seeding locations in the local area...");
   const rootLocation = await prisma.location.create({
     data: {
-      name: "Pimple Saudagar",
-      slug: "pimple-saudagar",
+      name: "Local Business",
+      slug: "local-area",
       description: "Premier residential and commercial suburb in PCMC / Pune, Maharashtra.",
       latitude: 18.5987,
       longitude: 73.7978,
@@ -123,7 +123,7 @@ async function main() {
       parentId: rootLocation.id,
       name: "Kokane Chowk",
       slug: "kokane-chowk",
-      description: "Key junction connecting Pimple Saudagar to Wakad and Rahatani.",
+      description: "Key junction connecting Local Business to Wakad and Rahatani.",
       latitude: 18.5954,
       longitude: 73.7998,
       featured: true,
@@ -163,7 +163,7 @@ async function main() {
     data: {
       name: "Food & Dining",
       slug: "food-and-dining",
-      description: "Restaurants, cafes, family dining, and sweet marts in Pimple Saudagar.",
+      description: "Restaurants, cafes, family dining, and sweet marts in the local area.",
       icon: "Utensils",
       featuredOnHome: true,
       sortOrder: 1,
@@ -251,13 +251,13 @@ async function main() {
 
   // 5. Create System Users
   console.log("👤 Seeding system users...");
-  // Standard development hash for password 'PimpleSaudagar@2026'
-  const devPasswordHash = "$argon2id$v=19$m=65536,t=3,p=1$317ge9Q8uAB7FRUFeLtZNQ$bzYmmXK3oxn4hwngK4d4bcIP1zZxE/+SSrz03DFCGvI";
+  // Standard development hash for password 'LocalDirectory@2026'
+  const devPasswordHash = "$argon2id$v=19$m=65536,t=3,p=1$8AA5QBe5kPtYjdOx72GKbg$4gPLE55esr0sZU80suJKfejXKoCIYY81v3qJUp57fbY";
 
   const adminUser = await prisma.user.create({
     data: {
       name: "Directory Admin",
-      email: "admin@pimplesaudagar.local",
+      email: "admin@directory.local",
       passwordHash: devPasswordHash,
       role: UserRole.admin,
       emailVerifiedAt: new Date(),
@@ -267,7 +267,7 @@ async function main() {
   const businessOwnerUser = await prisma.user.create({
     data: {
       name: "Rajesh Kulkarni",
-      email: "owner@pimplesaudagar.local",
+      email: "owner@directory.local",
       phone: "+919876543210",
       passwordHash: devPasswordHash,
       role: UserRole.owner,
@@ -278,7 +278,7 @@ async function main() {
   const visitorUser = await prisma.user.create({
     data: {
       name: "Pooja Sharma",
-      email: "visitor@pimplesaudagar.local",
+      email: "visitor@directory.local",
       passwordHash: devPasswordHash,
       role: UserRole.visitor,
       emailVerifiedAt: new Date(),
@@ -286,14 +286,14 @@ async function main() {
   });
 
   // 6. Create Verified Listings
-  console.log("🏢 Seeding verified listings in Pimple Saudagar...");
+  console.log("🏢 Seeding verified listings in the local area...");
 
   const listing1 = await prisma.listing.create({
     data: {
       title: "Govind Garden Multi-Cuisine Family Restaurant",
       slug: "govind-garden-multi-cuisine-restaurant",
       description:
-        "<p>Pimple Saudagar's landmark family restaurant serving authentic North Indian, Mughlai, Chinese, and coastal seafood delicacies. Features spacious open-air lawn seating, AC banquet halls, and dedicated kids play zone.</p>",
+        "<p>Local Business's landmark family restaurant serving authentic North Indian, Mughlai, Chinese, and coastal seafood delicacies. Features spacious open-air lawn seating, AC banquet halls, and dedicated kids play zone.</p>",
       status: ListingStatus.published,
       claimStatus: ClaimStatus.verified,
       ownerId: businessOwnerUser.id,
@@ -308,7 +308,7 @@ async function main() {
       whatsapp: "+919822001122",
       email: "dine@govindgarden.local",
       website: "https://govindgarden.local",
-      address: "Survey No. 42, Opposite Roseland Residency, Pimple Saudagar, Pune - 411027",
+      address: "Survey No. 42, Opposite Roseland Residency, Local Business, Pune - 411027",
       locality: "Govind Garden Area",
       landmark: "Opposite Roseland Residency",
       latitude: 18.5971,
@@ -355,7 +355,7 @@ async function main() {
   const listing2 = await prisma.listing.create({
     data: {
       title: "Dr. Smile Advanced Dental Clinic & Implant Center",
-      slug: "dr-smile-advanced-dental-clinic-pimple-saudagar",
+      slug: "dr-smile-advanced-dental-clinic-local-area",
       description:
         "<p>State-of-the-art dental care center in Kunal Icon Road providing painless root canal treatment, clear aligners, dental implants, teeth whitening, and pediatric dentistry with modern sterilization protocols.</p>",
       status: ListingStatus.published,
@@ -372,7 +372,7 @@ async function main() {
       whatsapp: "+919765432199",
       email: "contact@drsmileclinic.local",
       website: "https://drsmiledental.local",
-      address: "Shop 104, 1st Floor, Kunal Icon Commercial Complex, Kunal Icon Road, Pimple Saudagar - 411027",
+      address: "Shop 104, 1st Floor, Kunal Icon Commercial Complex, Kunal Icon Road, Local Business - 411027",
       locality: "Kunal Icon Road",
       landmark: "Near Kunal Icon Society",
       latitude: 18.5995,
@@ -417,9 +417,9 @@ async function main() {
   const listing3 = await prisma.listing.create({
     data: {
       title: "CoolBreeze AC & Refrigerator Repair Engineers",
-      slug: "coolbreeze-ac-refrigerator-repair-pimple-saudagar",
+      slug: "coolbreeze-ac-refrigerator-repair-local-area",
       description:
-        "<p>Professional doorstep AC repair, gas charging, jet pump chemical servicing, installation, and compressor maintenance in Pimple Saudagar, Rahatani, and Wakad. 90-day warranty on all spares.</p>",
+        "<p>Professional doorstep AC repair, gas charging, jet pump chemical servicing, installation, and compressor maintenance in the local area, Rahatani, and Wakad. 90-day warranty on all spares.</p>",
       status: ListingStatus.published,
       claimStatus: ClaimStatus.unclaimed,
       featured: false,
@@ -429,7 +429,7 @@ async function main() {
       reviewCount: 19,
       phone: "+919422334455",
       whatsapp: "+919422334455",
-      address: "Shop 12, Shivar Chowk Main Road, Pimple Saudagar - 411027",
+      address: "Shop 12, Shivar Chowk Main Road, Local Business - 411027",
       locality: "Shivar Chowk",
       landmark: "Near Shivar Garden Chowk",
       latitude: 18.6015,

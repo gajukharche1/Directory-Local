@@ -6,7 +6,7 @@
 </script>
 
 <svelte:head>
-  <title>Dashboard Overview | Pimple Saudagar Directory</title>
+  <title>Dashboard Overview | Local Business Directory</title>
 </svelte:head>
 
 <div class="space-y-8">
@@ -16,7 +16,7 @@
       Welcome back, {data.listings ? "" : ""}Owner
     </h1>
     <p class="text-xs text-muted-foreground mt-1">
-      Here is your business performance summary in Pimple Saudagar
+      Here is your business performance summary in the local area
     </p>
   </div>
 

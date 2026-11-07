@@ -10,14 +10,14 @@
 </script>
 
 <svelte:head>
-  <title>Create an Account | Pimple Saudagar Directory</title>
+  <title>Create an Account | Local Business Directory</title>
 </svelte:head>
 
 <div>
   <div class="mb-6">
     <h2 class="text-xl font-bold tracking-tight text-foreground">Create your account</h2>
     <p class="text-xs text-muted-foreground mt-1">
-      Join the Pimple Saudagar local business community
+      Join the Local Business local business community
     </p>
   </div>
 

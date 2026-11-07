@@ -9,7 +9,7 @@
   let isSubmitting = $state(false);
 
   const sampleCsv = `title,address,locality,phone,whatsapp,email,website,category,location
-Saudagar Sweets,Shop 4 Kunal Icon Rd,Kunal Icon Rd,+919822011223,+919822011223,info@saudagarsweets.com,https://saudagarsweets.com,food-dining,kunal-icon-road
+City Sweets & Bakery,Shop 4 Market Rd,Market Rd,+919822011223,+919822011223,info@citysweets.com,https://citysweets.com,food-dining,central-market
 Kokane Dental Clinic,Opposite Shivar Garden,Kokane Chowk,+919876543210,+919876543210,drkokane@example.com,,health-medical,kokane-chowk`;
 
   function loadSample() {
@@ -25,7 +25,7 @@ Kokane Dental Clinic,Opposite Shivar Garden,Kokane Chowk,+919876543210,+91987654
   <div>
     <h1 class="text-2xl font-bold tracking-tight text-foreground">Bulk Business Import</h1>
     <p class="text-xs text-muted-foreground mt-0.5">
-      Upload or paste CSV data to quickly seed or migrate hundreds of local businesses into Pimple Saudagar.
+      Upload or paste CSV data to quickly seed or migrate hundreds of local businesses into the directory.
     </p>
   </div>
 

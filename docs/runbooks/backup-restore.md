@@ -1,6 +1,6 @@
 # Database & Media Backup & Recovery Runbook
 
-This operational runbook documents the disaster recovery, point-in-time restoration, and continuous backup procedures for the Pimple Saudagar Directory platform.
+This operational runbook documents the disaster recovery, point-in-time restoration, and continuous backup procedures for the Local Business Directory platform.
 
 ---
 
@@ -14,7 +14,7 @@ Execute via cron on a backup server or GitHub Actions scheduled workflow:
 set -euo pipefail
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_DIR="/var/backups/pimplesaudagar"
+BACKUP_DIR="/var/backups/localdirectory"
 BACKUP_FILE="${BACKUP_DIR}/directory_${TIMESTAMP}.dump"
 
 mkdir -p "${BACKUP_DIR}"
@@ -48,7 +48,7 @@ pg_restore --clean --if-exists --no-owner --no-privileges -d "${TARGET_DATABASE_
 
 # 4. Regenerate Prisma client & trigger aggregate recalculation
 npm run prisma:generate
-curl -X GET "https://pimplesaudagar.org/api/cron/repair-aggregates?key=${CRON_SECRET}"
+curl -X GET "https://example.com/api/cron/repair-aggregates?key=${CRON_SECRET}"
 ```
 
 ---
@@ -59,7 +59,7 @@ Cloudflare R2 provides 99.999999999% (11 9s) of durability. For offsite multi-cl
 
 ```bash
 # Sync R2 bucket to local or secondary S3 bucket
-aws s3 sync s3://pimplesaudagar-media ./r2-backup-media \
+aws s3 sync s3://localdirectory-media ./r2-backup-media \
   --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
 ```
 

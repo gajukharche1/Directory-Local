@@ -3,54 +3,44 @@
 If you have seeded the database (via npx tsx scripts/seed.ts), the following accounts are pre-configured:
 
 🛡️ Administrator Back-Office (/admin)
-Email: admin@pimplesaudagar.local
-Password: PimpleSaudagar@2026
+Email: admin@directory.local
+Password: LocalDirectory@2026
 Role: admin
 Access:
-Moderation Queue (/admin/moderation): Approve/reject customer reviews & claim requests
-Listing Directory (/admin/listings): Change status (Published, Pending, Archived)
-Bulk CSV Import (/admin/imports): Bulk seed new local businesses
+- Moderation Queue (/admin/moderation): Approve/reject customer reviews & claim requests
+- Listing Directory (/admin/listings): Change status (Published, Pending, Archived)
+- Bulk CSV Import (/admin/imports): Bulk seed new local businesses
+
 🏢 Business Owner Dashboard (/dashboard)
-Email: owner@pimplesaudagar.local
-Password: PimpleSaudagar@2026
+Email: owner@directory.local
+Password: LocalDirectory@2026
 Role: owner
 Access:
-Overview KPI counters (/dashboard)
-My Listings (/dashboard/listings)
-Customer Leads & Enquiries (/dashboard/enquiries)
-Customer Reviews & Owner Responses (/dashboard/reviews)
-Subscription & Billing (/dashboard/billing)
+- Overview KPI counters (/dashboard)
+- My Listings (/dashboard/listings)
+- Customer Leads & Enquiries (/dashboard/enquiries)
+- Customer Reviews & Owner Responses (/dashboard/reviews)
+- Subscription & Billing (/dashboard/billing)
+
 👤 Resident / Visitor
-Email: visitor@pimplesaudagar.local
-Password: PimpleSaudagar@2026
+Email: visitor@directory.local
+Password: LocalDirectory@2026
 Role: visitor
+
 2. How to Sign In
 Open your browser to the login page:
-Next.js app: http://localhost:3000/login
-SvelteKit app: http://localhost:5173/login
+http://localhost:5173/login
+
 Enter the email and password above.
 Upon clicking Sign In, the system validates your Argon2id hash, issues an encrypted HTTP-only session cookie (ps_session), and automatically routes you based on your role:
-admin / moderator 
-→
-→ automatically redirected to /admin
-owner 
-→
-→ automatically redirected to /dashboard
-visitor 
-→
-→ redirected to / (or your requested return page)
+- admin / moderator → redirected to /admin
+- owner → redirected to /dashboard
+- visitor → redirected to / (or your requested return page)
+
 3. Creating a New Account
 
 You can also register a new Business Owner or Visitor account directly:
-
-Go to /register
-Click the "Business Owner" tab
-Fill in your name, email, phone number, and password
-Click Create Business Account — you will be registered and taken straight to /dashboard.
-
-NOTE
-
-Make sure PostgreSQL is running locally on port 5432 (pimplesaudagar_dev). If you ever need to re-seed or reset accounts, run:
-
-bash
-npx tsx scripts/seed.ts
+1. Go to /register
+2. Click the "Business Owner" or "Visitor" tab
+3. Fill in your name, email, phone number, and password
+4. Click Create Account — you will be registered and taken straight to your dashboard.

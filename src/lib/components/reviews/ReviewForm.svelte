@@ -38,7 +38,7 @@
     <div class="mb-5 pb-3 border-b border-slate-100">
       <h3 class="font-bold text-base text-slate-900">Write a Review for {listingTitle}</h3>
       <p class="text-xs text-slate-500 mt-0.5">
-        Share your verified experience to help neighbors in Pimple Saudagar
+        Share your verified experience to help neighbors in the local area
       </p>
     </div>
 
