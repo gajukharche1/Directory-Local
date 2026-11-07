@@ -4,6 +4,7 @@ import { ListingService } from "$lib/services/listing.service";
 import { ClaimService } from "$lib/services/claim.service";
 import { ClaimStatus } from "@prisma/client";
 import { z } from "zod";
+import { toPOJO } from "$lib/utils";
 
 const claimSchema = z.object({
   listingId: z.string().min(1, "Listing ID is required."),
@@ -23,11 +24,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     listing.claimStatus === ClaimStatus.claimed ||
     listing.claimStatus === ClaimStatus.verified;
 
-  return {
+  return toPOJO({
     listing,
     isAlreadyClaimed,
     user: locals.user,
-  };
+  });
 };
 
 export const actions: Actions = {

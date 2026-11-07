@@ -4,6 +4,7 @@ import db from "$lib/db/client";
 import { ReviewStatus, ClaimRequestStatus } from "@prisma/client";
 import { ReviewService } from "$lib/services/review.service";
 import { ClaimService } from "$lib/services/claim.service";
+import { toPOJO } from "$lib/utils";
 
 export const load: PageServerLoad = async () => {
   const [pendingReviews, pendingClaims] = await Promise.all([
@@ -34,10 +35,10 @@ export const load: PageServerLoad = async () => {
       .catch(() => []),
   ]);
 
-  return {
+  return toPOJO({
     pendingReviews,
     pendingClaims,
-  };
+  });
 };
 
 export const actions: Actions = {

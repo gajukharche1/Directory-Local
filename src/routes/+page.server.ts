@@ -2,6 +2,7 @@ import type { PageServerLoad } from "./$types";
 import { TaxonomyService } from "$lib/services/taxonomy.service";
 import db from "$lib/db/client";
 import { ListingStatus } from "@prisma/client";
+import { toPOJO } from "$lib/utils";
 
 export const load: PageServerLoad = async () => {
   const [categories, locations, featuredListings] = await Promise.all([
@@ -30,9 +31,9 @@ export const load: PageServerLoad = async () => {
       .catch(() => []),
   ]);
 
-  return {
+  return toPOJO({
     categories,
     locations,
     featuredListings,
-  };
+  });
 };

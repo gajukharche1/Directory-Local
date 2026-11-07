@@ -2,6 +2,7 @@ import { fail } from "@sveltejs/kit";
 import type { PageServerLoad, Actions } from "./$types";
 import db from "$lib/db/client";
 import { ReviewService } from "$lib/services/review.service";
+import { toPOJO } from "$lib/utils";
 
 export const load: PageServerLoad = async ({ locals }) => {
   const user = locals.user!;
@@ -26,7 +27,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     })
     .catch(() => []);
 
-  return { reviews };
+  return toPOJO({ reviews });
 };
 
 export const actions: Actions = {

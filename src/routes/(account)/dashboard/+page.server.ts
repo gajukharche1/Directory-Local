@@ -1,6 +1,7 @@
 import type { PageServerLoad } from "./$types";
 import { ListingService } from "$lib/services/listing.service";
 import { EnquiryService } from "$lib/services/enquiry.service";
+import { toPOJO } from "$lib/utils";
 
 export const load: PageServerLoad = async ({ locals }) => {
   const user = locals.user!;
@@ -14,11 +15,11 @@ export const load: PageServerLoad = async ({ locals }) => {
   const totalReviews = listings.reduce((acc, curr) => acc + curr._count.reviews, 0);
   const unreadEnquiries = enquiries.filter((e) => !e.isRead).length;
 
-  return {
+  return toPOJO({
     listings,
     enquiries: enquiries.slice(0, 5),
     totalViews,
     totalReviews,
     unreadEnquiries,
-  };
+  });
 };

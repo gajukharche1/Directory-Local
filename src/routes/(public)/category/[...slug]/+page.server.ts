@@ -1,6 +1,7 @@
 import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 import { TaxonomyService } from "$lib/services/taxonomy.service";
+import { toPOJO } from "$lib/utils";
 
 export const load: PageServerLoad = async ({ params }) => {
   const slugArray = params.slug ? params.slug.split("/").filter(Boolean) : [];
@@ -16,9 +17,9 @@ export const load: PageServerLoad = async ({ params }) => {
 
   const listings = await TaxonomyService.getListingsByCategory(category.id);
 
-  return {
+  return toPOJO({
     category,
     listings,
     slugPath: params.slug,
-  };
+  });
 };

@@ -2,6 +2,7 @@ import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 import { ListingService } from "$lib/services/listing.service";
 import { SeoService } from "$lib/services/seo.service";
+import { toPOJO } from "$lib/utils";
 
 export const load: PageServerLoad = async ({ params, url }) => {
   const listing = await ListingService.getBySlug(params.slug);
@@ -26,9 +27,9 @@ export const load: PageServerLoad = async ({ params, url }) => {
     baseUrl
   );
 
-  return {
+  return toPOJO({
     listing,
     localBusinessSchema,
     breadcrumbSchema,
-  };
+  });
 };

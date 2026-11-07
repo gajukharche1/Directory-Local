@@ -4,6 +4,7 @@ import { ListingService } from "$lib/services/listing.service";
 import { ReviewService } from "$lib/services/review.service";
 import { rateLimits } from "$lib/security/rate-limit";
 import { z } from "zod";
+import { toPOJO } from "$lib/utils";
 
 const reviewSchema = z.object({
   listingId: z.string().min(1, "Listing ID is required."),
@@ -28,10 +29,10 @@ export const load: PageServerLoad = async ({ url, locals }) => {
     throw error(404, "Listing not found");
   }
 
-  return {
+  return toPOJO({
     listing,
     user: locals.user,
-  };
+  });
 };
 
 export const actions: Actions = {

@@ -1,6 +1,7 @@
 import type { PageServerLoad } from "./$types";
 import { SearchService } from "$lib/services/search.service";
 import db from "$lib/db/client";
+import { toPOJO } from "$lib/utils";
 
 export const load: PageServerLoad = async ({ url }) => {
   const q = url.searchParams.get("q") || "";
@@ -38,7 +39,7 @@ export const load: PageServerLoad = async ({ url }) => {
       .catch(() => []),
   ]);
 
-  return {
+  return toPOJO({
     q,
     category,
     location,
@@ -48,5 +49,5 @@ export const load: PageServerLoad = async ({ url }) => {
     searchResult,
     allCategories,
     allLocations,
-  };
+  });
 };
