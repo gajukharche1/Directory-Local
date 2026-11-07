@@ -1,4 +1,4 @@
-import { fail, redirect } from "@sveltejs/kit";
+import { fail, redirect, isRedirect } from "@sveltejs/kit";
 import type { PageServerLoad, Actions } from "./$types";
 import { z } from "zod";
 import db from "$lib/db/client";
@@ -36,60 +36,81 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
   default: async ({ request, cookies, getClientAddress }) => {
-    const formData = await request.formData();
-    const rawData = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      phone: formData.get("phone") || "",
-      password: formData.get("password"),
-      role: formData.get("role") || "visitor",
-    };
-
-    const validation = registerSchema.safeParse(rawData);
-    if (!validation.success) {
-      return fail(400, {
-        error: "Please correct the form errors.",
-        fieldErrors: validation.error.flatten().fieldErrors,
-      });
-    }
-
-    const { name, email, phone, password, role } = validation.data;
-    const normalizedEmail = email.toLowerCase().trim();
-
-    const existingUser = await db.user.findUnique({
-      where: { email: normalizedEmail },
-    });
-
-    if (existingUser) {
-      return fail(400, {
-        error: "An account with this email address already exists. Please sign in instead.",
-      });
-    }
-
-    const passwordHash = await hashPassword(password);
-
-    const newUser = await db.user.create({
-      data: {
-        name,
-        email: normalizedEmail,
-        phone: phone || null,
-        passwordHash,
-        role: role === "owner" ? UserRole.owner : UserRole.visitor,
-      },
-    });
-
-    let clientIp = "127.0.0.1";
     try {
-      clientIp = getClientAddress();
-    } catch {}
+      const formData = await request.formData();
+      const rawData = {
+        name: formData.get("name"),
+        email: formData.get("email"),
+        phone: formData.get("phone") || "",
+        password: formData.get("password"),
+        role: formData.get("role") || "visitor",
+      };
 
-    await createSession(newUser.id, cookies, clientIp);
+      const validation = registerSchema.safeParse(rawData);
+      if (!validation.success) {
+        return fail(400, {
+          error: "Please correct the form errors.",
+          fieldErrors: validation.error.flatten().fieldErrors,
+        });
+      }
 
-    // Send asynchronous welcome email (non-blocking)
-    EmailService.sendWelcomeEmail(newUser.email, newUser.name).catch((err) =>
-      console.error("Failed to send welcome email:", err)
-    );
+      const { name, email, phone, password, role } = validation.data;
+      const normalizedEmail = email.toLowerCase().trim();
 
-    throw redirect(303, role === "owner" ? "/dashboard" : "/");
+      const existingUser = await db.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+
+      if (existingUser) {
+        return fail(400, {
+          error: "An account with this email address already exists. Please sign in instead.",
+        });
+      }
+
+      const passwordHash = await hashPassword(password);
+
+      const newUser = await db.user.create({
+        data: {
+          name,
+          email: normalizedEmail,
+          phone: phone || null,
+          passwordHash,
+          role: role === "owner" ? UserRole.owner : UserRole.visitor,
+        },
+      });
+
+      let clientIp = "127.0.0.1";
+      try {
+        clientIp = getClientAddress();
+      } catch {}
+
+      await createSession(newUser.id, cookies, clientIp);
+
+      // Send asynchronous welcome email (non-blocking)
+      EmailService.sendWelcomeEmail(newUser.email, newUser.name).catch((err) =>
+        console.error("Failed to send welcome email:", err)
+      );
+
+      throw redirect(303, role === "owner" ? "/dashboard" : "/");
+    } catch (err) {
+      if (isRedirect(err)) {
+        throw err;
+      }
+      console.error("Register action error:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("reach database") || (err as any)?.code === "P1001") {
+        return fail(503, {
+          error: "Database server is unreachable. Please verify your database connection and ensure PostgreSQL is running.",
+        });
+      }
+      if (message.includes("does not exist") || (err as any)?.code === "P2021") {
+        return fail(500, {
+          error: "Database tables are not initialized. Please run 'npx prisma db push' to create tables.",
+        });
+      }
+      return fail(500, {
+        error: "An unexpected error occurred during registration. Please try again.",
+      });
+    }
   },
 };
