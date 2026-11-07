@@ -14,7 +14,8 @@
     { key: "sunday", label: "Sunday" },
   ];
 
-  function formatTime12h(time24: string): string {
+  function formatTime12h(time24?: string): string {
+    if (!time24 || typeof time24 !== "string") return "";
     const [hStr, mStr] = time24.split(":");
     const h = parseInt(hStr || "0", 10);
     const m = mStr || "00";
@@ -52,11 +53,11 @@
     <div class="space-y-2 text-xs">
       {#each daysDisplay as { key, label }}
         {@const day = schedule[key]}
-        {@const isClosed = !day || day.closed}
+        {@const isClosed = !day || day.closed || !day.open || !day.close}
         <div class="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
           <span class="font-medium text-slate-800">{label}</span>
           <span class={isClosed ? "text-rose-600 font-semibold" : "text-slate-500"}>
-            {isClosed ? "Closed" : `${formatTime12h(day!.open)} - ${formatTime12h(day!.close)}`}
+            {isClosed ? "Closed" : `${formatTime12h(day?.open)} - ${formatTime12h(day?.close)}`}
           </span>
         </div>
       {/each}

@@ -1,4 +1,4 @@
-import type { Handle } from "@sveltejs/kit";
+import type { Handle, HandleServerError } from "@sveltejs/kit";
 import { building } from "$app/environment";
 import { SESSION_COOKIE_NAME, validateSessionToken } from "$lib/auth/session";
 
@@ -53,4 +53,12 @@ export const handle: Handle = async ({ event, resolve }) => {
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
 
   return response;
+};
+
+export const handleError: HandleServerError = ({ error, event, status, message }) => {
+  const errMessage = error instanceof Error ? error.message : String(error);
+  console.error(`[Server Error ${status}] at ${event.url.pathname}:`, error);
+  return {
+    message: errMessage || message || "Internal Error",
+  };
 };
