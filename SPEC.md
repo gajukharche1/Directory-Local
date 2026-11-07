@@ -1,15 +1,15 @@
-# Project Specification: Local Business Directory (PS)
+# Project Specification: Local Business Directory
 
-**Document Version**: 1.0.0  
+**Document Version**: 2.0.0  
 **Status**: APPROVED & LOCKED  
-**Application Type**: Hyperlocal Business Directory (Justdial / WordPress ListingPro equivalent)  
-**Target Locale**: Local Business Directory/Pune, Maharashtra, India (5,000 listings capacity)
+**Application Type**: Hyperlocal Business Directory (SvelteKit Port)  
+**Target Locale**: Configurable Local Business Directory (Multi-region / Neighborhood Support)
 
 ---
 
 ## 1. System Vision & Objectives
 
-The Local Business Directory provides a lightning-fast, production-grade local discovery engine for residents and businesses of Local Business. It replaces traditional WordPress/PHP directory themes with a modern, high-performance Next.js App Router application backed by PostgreSQL, adhering to strict OWASP ASVS Level 2 standards and India's Digital Personal Data Protection (DPDP) Act 2023.
+The Local Business Directory provides a lightning-fast, production-grade local discovery engine for residents, visitors, and local businesses. It is built as a modern, high-performance application on **SvelteKit 2 + Svelte 5 (Runes)** backed by PostgreSQL via Prisma ORM, adhering to strict OWASP ASVS Level 2 standards and modern data protection principles (including India's DPDP Act 2023).
 
 ### Core User Personas
 1. **Public Visitor**: Searches services, browses categorized directories, checks live "Open Now" status, views Leaflet maps, reads verified reviews, and submits enquiries.
@@ -39,12 +39,12 @@ The Local Business Directory provides a lightning-fast, production-grade local d
 | `viewCount` | BIGINT | De-duplicated view counter |
 | `averageRating` | DECIMAL(3,2) | Cached aggregate rating (1.00 to 5.00) |
 | `reviewCount` | INTEGER | Cached approved review count |
-| `phone` | VARCHAR(20) | Business telephone (+91 format) |
+| `phone` | VARCHAR(20) | Business telephone format |
 | `whatsapp` | VARCHAR(20) | WhatsApp click-to-chat target |
 | `email` | VARCHAR(255) | Private contact email (hidden behind form by default) |
 | `website` | VARCHAR(255) | Verified HTTPS URL |
 | `address` | TEXT | Street address |
-| `locality` | VARCHAR(100) | Primary neighborhood/locality in the local area |
+| `locality` | VARCHAR(100) | Primary neighborhood/locality |
 | `landmark` | VARCHAR(100) | Prominent landmark |
 | `latitude` | DECIMAL(10,8) | Spatial coordinate (WGS84) |
 | `longitude`| DECIMAL(11,8) | Spatial coordinate (WGS84) |
@@ -53,13 +53,13 @@ The Local Business Directory provides a lightning-fast, production-grade local d
 | `socialLinks`| JSONB | Allowlisted keys (`facebook`, `instagram`, `linkedin`, `youtube`, `x`) |
 
 ### 2.2 Categories (`categories`) & Locations (`locations`)
-- **Hierarchical Self-Relation**: `parentId` allows infinite nesting (e.g., *Automotive > Car Repair > Denting & Painting* or *Local Business > Kunal Icon Road > Roseland Residency*).
+- **Hierarchical Self-Relation**: `parentId` allows infinite nesting (e.g., *Automotive > Car Repair > Denting & Painting* or *City > Downtown > Main Street*).
 - **Listing Relations**: Many-to-Many junction tables (`listing_categories`, `listing_locations`).
 - **Cached Counts**: Real-time published listing counts cached on category and location records.
 
 ### 2.3 Pricing Plans (`pricing_plans`)
 - Free, Standard, Premium plans.
-- Parameters: `priceMinor` (in paise, integer), `currency` (INR), `billingPeriodDays`, `maxPhotos`, `maxCategories`, `maxLocations`, `featuredAllowed`, `badgeVisible`, `callButtonAllowed`, `whatsappAllowed`, `searchPriority`.
+- Parameters: `priceMinor` (in paise/cents, integer), `currency` (INR/USD), `billingPeriodDays`, `maxPhotos`, `maxCategories`, `maxLocations`, `featuredAllowed`, `badgeVisible`, `callButtonAllowed`, `whatsappAllowed`, `searchPriority`.
 - `plan_audit_log` records all pricing or entitlement modifications.
 
 ### 2.4 Reviews (`reviews`)
@@ -90,8 +90,8 @@ The Local Business Directory provides a lightning-fast, production-grade local d
 /submit                           -> Multi-step business submission wizard (auth required)
 /claim/[slug]                     -> Ownership claim verification flow
 /reviews/new?listing=[slug]       -> Standalone accessible review form
-/dashboard/*                      -> Business owner management console
-/admin/*                          -> Role-gated admin back-office and moderation hub
+/dashboard/*                      -> Business owner management console (Overview, Listings, Enquiries, Reviews, Billing)
+/admin/*                          -> Role-gated admin back-office (Overview, Moderation, Listings, CSV Imports)
 /api/webhooks/payments            -> Razorpay/Stripe signature-verified webhook handler
 /api/cron/[job]                   -> Secret-gated scheduled maintenance tasks
 ```
@@ -100,25 +100,23 @@ The Local Business Directory provides a lightning-fast, production-grade local d
 
 ## 4. Mandatory Security Compliance (ASVS Level 2 & DPDP Act)
 
-1. **Authentication**: Argon2id password hashing (memory cost 64MB, time cost 3 iterations, parallelism 1 thread). Zero timing attack vectors via constant-time verification.
-2. **Authorization (DAL)**: All service layer queries for owner-scoped assets mandate `where: { id: listingId, ownerId: session.userId }`. Admin routes verified via middleware + server action token checks.
-3. **CSP & Headers**: Nonce-based Content Security Policy generated per-request in middleware. Strict frame-ancestors `'none'`, nosniff, HSTS 2-year preload.
-4. **Data Privacy (India DPDP Act 2023)**:
+1. **Authentication**: Argon2id password hashing (memory cost 64MB, time cost 3 iterations, parallelism 1 thread). Constant-time verification against timing attacks.
+2. **Authorization (DAL)**: All service layer queries for owner-scoped assets mandate `where: { id: listingId, ownerId: session.userId }`. Admin routes verified via `src/hooks.server.ts` role guards.
+3. **CSP & Security Headers**: Injected centrally in `src/hooks.server.ts`. Strict frame-ancestors `'none'`, nosniff, strict-origin-when-cross-origin.
+4. **Data Privacy**:
    - Clear consent notices on lead capture and reviews.
-   - Self-service data export (`/account/export`) and erasure request (`/account/delete`).
    - Hash reviewer email with internal server pepper to prevent PII harvesting while enforcing one-review-per-person integrity.
-5. **Upload Protection**: Direct-to-bucket pre-signed URLs with size and MIME allowlists. Server validates magic bytes via Sharp, strips EXIF GPS tags, re-encodes to WebP/AVIF.
+5. **Upload Protection**: Direct-to-bucket pre-signed URLs with size and MIME allowlists.
 
 ---
 
 ## 5. Performance & SEO Baselines
 
 - **Core Web Vitals**: LCP < 2.5s, INP < 200ms, CLS < 0.1.
-- **Dynamic Leaflet Loading**: Lazy-load maps dynamically with `next/dynamic` and `ssr: false` below the initial viewport fold.
+- **Dynamic Leaflet Loading**: Lazy-load maps client-side using `onMount` in Svelte 5 components.
 - **Structured JSON-LD**:
   - `LocalBusiness` (or category-specific subtype such as `Restaurant`, `MedicalBusiness`, `AutoRepair`).
   - `OpeningHoursSpecification` mapped from the JSON opening hours.
   - `AggregateRating` and `Review` schema rendered exclusively for approved reviews.
   - `BreadcrumbList` for category and locality trees.
-- **Chunked Sitemaps**: `sitemap.ts` implementing sitemap index split by category and 1,000-listing chunks.
-
+- **Dynamic Sitemaps**: `src/routes/sitemap.xml/+server.ts` generating real-time XML index split across listings, categories, and locations.

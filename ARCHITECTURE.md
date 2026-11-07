@@ -1,32 +1,33 @@
-# System Architecture: Local Business Directory (PS)
+# System Architecture: Local Business Directory
 
 ```
 +---------------------------------------------------------------------------------------+
 |                                    Edge & Clients                                     |
-|  [Desktop / Mobile Browsers] <---> [Next.js Edge Middleware] (CSP Nonce, Auth Gate)  |
+|  [Desktop / Mobile Browsers] <---> [SvelteKit Server Hooks] (RBAC, Session, Headers)  |
 +---------------------------------------------------------------------------------------+
                                            |
                                            v
 +---------------------------------------------------------------------------------------+
-|                               Next.js 15 App Router                                   |
+|                               SvelteKit 2 + Svelte 5                                  |
 |                                                                                       |
 |  +---------------------------+   +----------------------------+                       |
-|  | Server Components (RSC)   |   | Client Components (Leaflet,|                       |
-|  | - Listing Profiles        |   | Interactive Filter Bar,    |                       |
-|  | - Category/Location Hubs  |   | Gallery Lightbox, Modals)  |                       |
+|  | Server Load Functions     |   | Svelte 5 Client Runes      |                       |
+|  | (+page.server.ts)         |   | ($state, $props, $derived) |                       |
+|  | - Listing Profiles        |   | - Leaflet MapView          |                       |
+|  | - Category/Location Hubs  |   | - Search Filter Bar        |                       |
 |  +---------------------------+   +----------------------------+                       |
 |                |                               |                                      |
 |                v                               v                                      |
 |  +------------------------------------------------------------+                       |
-|  | Server Actions (Mutations) & Route Handlers (APIs / Crons) |                       |
+|  | Form Actions & Server Endpoints (+page.server.ts, +server) |                       |
 |  | - Zod Input Schema Validation (.strict())                  |                       |
-|  | - Origin Header Verification & CSRF Guard                  |                       |
-|  | - Upstash / Redis Sliding Window Rate Limiter              |                       |
+|  | - Origin Header Verification & SvelteKit CSRF Guard        |                       |
+|  | - Sliding Window / Token Bucket Rate Limiter               |                       |
 |  +------------------------------------------------------------+                       |
 |                                |                                                      |
 |                                v                                                      |
 |  +------------------------------------------------------------+                       |
-|  | Domain Service Layer (lib/services/*)                      |                       |
+|  | Domain Service Layer (src/lib/services/*)                  |                       |
 |  | - ListingService, ReviewService, PlanService, MediaService |                       |
 |  | - Data Access Layer (DAL) Enforcing Owner/Role Boundaries  |                       |
 |  +------------------------------------------------------------+                       |
@@ -43,7 +44,7 @@
                  v
 +---------------------------------------------------------------------------------------+
 |                            External Service Adapters                                  |
-|  [Resend / React Email]       [Razorpay / Stripe Payments]     [Turnstile Bot Guard]  |
+|  [Resend / Email Service]     [Razorpay / Stripe Payments]     [Turnstile Bot Guard]  |
 +---------------------------------------------------------------------------------------+
 ```
 
@@ -51,21 +52,25 @@
 
 ## 1. Architectural Decision Records (ADRs)
 
-### ADR-01: Next.js App Router with Server Actions vs API-only SPA
-- **Decision**: Adopt Next.js 15 App Router with React Server Components (RSC) and Server Actions.
-- **Rationale**: A business directory lives and dies by SEO and Time-to-First-Byte (TTFB). Server-rendering listing pages guarantees indexability and sub-second paint times. Server Actions eliminate the need to maintain redundant REST API routes for internal form mutations while providing automatic CSRF protection.
+### ADR-01: SvelteKit 2 + Svelte 5 (Runes) SSR & Form Actions
+- **Decision**: Adopt SvelteKit 2 with Svelte 5 Runes (`$state`, `$props`, `$derived`, `{#snippet}`) and Server Form Actions.
+- **Rationale**: A local business directory requires top-tier SEO, fast Time-to-First-Byte (TTFB), and low client runtime overhead. Svelte 5 compiles away virtual DOM overhead, delivering faster page loads, instantaneous client navigation, and unified server form actions with automatic progressive enhancement.
 
-### ADR-02: PostgreSQL Native Full-Text Search vs Elasticsearch / Algolia
-- **Decision**: Leverage PostgreSQL built-in `tsvector`, `tsquery`, GIN indexes, and `pg_trgm` similarity queries instead of spinning up Algolia or Elasticsearch.
-- **Rationale**: For a hyperlocal directory capped at 5,000 to 10,000 listings, PostgreSQL FTS provides sub-10ms response times without cross-service network latency, data synchronization lag, or additional SaaS operational costs. Architectural reduction principle: keep primitives minimal until scale mandates external engines.
+### ADR-02: PostgreSQL Native Full-Text Search vs External Search Engines
+- **Decision**: Leverage PostgreSQL built-in `tsvector`, `tsquery`, GIN indexes, and `pg_trgm` similarity queries instead of Algolia or Elasticsearch.
+- **Rationale**: For directories scaling up to 10,000+ listings, PostgreSQL FTS provides sub-10ms response times without cross-service network latency, data synchronization lag, or additional SaaS operational costs.
 
 ### ADR-03: Data Access Layer (DAL) Ownership Isolation
-- **Decision**: Reject relying on UI checks for permissions. Enforce tenant and ownership isolation directly in `lib/services/` and database repository functions.
+- **Decision**: Enforce tenant and ownership isolation directly in `src/lib/services/` and database repository functions rather than relying only on UI checks.
 - **Rationale**: Mitigates Insecure Direct Object References (IDOR, OWASP Top 10 A01:2021). Every listing update, image deletion, or reply submission explicitly verifies `where: { id, ownerId: session.userId }` at the SQL query level.
 
 ### ADR-04: Atomic Recalculation for Ratings & Review Aggregates
 - **Decision**: When reviews transition state (e.g. `pending` -> `approved` or `approved` -> `trashed`), ratings are recalculated inside an atomic PostgreSQL interactive transaction (`prisma.$transaction`).
 - **Rationale**: Eliminates rating drift, stale averages, and concurrency race conditions. Background cron repairs exist as a secondary failsafe.
+
+### ADR-05: SvelteKit Server Hooks for Security & Access Control
+- **Decision**: Enforce authentication resolution, role-based access control (RBAC), and security headers centrally via `src/hooks.server.ts`.
+- **Rationale**: Guarantees that protected areas (`/admin/*` and `/dashboard/*`) cannot be accessed without valid session tokens and proper roles, regardless of how routes are loaded.
 
 ---
 
@@ -73,22 +78,25 @@
 
 | Threat | Target Subsystem | Mitigation Architecture |
 | :--- | :--- | :--- |
-| **Spoofing** | User & Owner Auth | Argon2id password hashing, hashed single-use tokens, session rotation upon privilege elevation, TOTP MFA for admins. |
+| **Spoofing** | User & Owner Auth | Argon2id password hashing, hashed single-use tokens, session rotation upon privilege elevation. |
 | **Tampering** | Listings & Reviews | Server-side HTML sanitization with strict element allowlist, strict Zod schema validation, parameterised queries. |
 | **Repudiation** | Moderation & Admin | Append-only `audit_log` recording `actorId`, `action`, `entity`, `ipAddress`, and diff snapshots. |
 | **Information Disclosure** | PII & Reviewers | Reviewer emails hashed with server-side pepper; raw business emails hidden behind server action contact proxies. |
-| **Denial of Service** | Search & Form Spam | Sliding-window Redis rate limits (e.g. 5 reviews/hr/IP, 60 search queries/min/IP), Turnstile bot challenges, honeypot traps. |
-| **Elevation of Privilege** | Admin & Owner Routes | Dual-layer defense: Edge middleware route protection + Server Action role validation. |
+| **Denial of Service** | Search & Form Spam | Sliding-window rate limits (e.g. 5 reviews/hr/IP, 60 search queries/min/IP), honeypot traps, time-traps. |
+| **Elevation of Privilege** | Admin & Owner Areas | Role-based route guards in `src/hooks.server.ts` checking `UserRole` (`admin`, `moderator`, `owner`, `visitor`). |
 
 ---
 
-## 3. Data Flow Pipeline: The 5-Stage Pattern
+## 3. Data Flow Pipelines
 
-In accordance with the Context Engineering & Project Development methodology, non-deterministic or complex mutations follow the canonical pipeline:
+### 3.1 Public Search & Directory Browsing
+1. User requests search `/search?q=bakery&location=central`
+2. `src/routes/(public)/search/+page.server.ts` executes `SearchService.searchListings()`
+3. PostgreSQL performs indexed FTS query with locality filter
+4. Server streams pre-rendered HTML to browser; client-side Svelte 5 runes handle interactive filtering without full page reloads
 
-1. **Acquire**: Ingest raw inputs from Server Actions, webhooks, or file uploads.
-2. **Prepare**: Validate against Zod schemas, normalize casing, sanitize HTML, extract coordinates, hash credentials.
-3. **Process**: Execute primary business logic (e.g., payment capture, sharp image transcoding, database mutation).
-4. **Parse**: Extract status flags, format domain responses, handle payment provider event IDs.
-5. **Render**: Invalidate Next.js cache tags (`revalidateTag`), update UI state, dispatch transactional notification emails.
-
+### 3.2 Lead Capture & Enquiry Flow
+1. User clicks "Send Enquiry" on listing profile
+2. `EnquiryModal.svelte` captures contact form data, honeypot field, and timestamp
+3. Submitted to `/api/enquiry` or page action; validated via Zod
+4. Lead stored in PostgreSQL; non-blocking notification dispatched via `EmailService`

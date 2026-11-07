@@ -1,9 +1,9 @@
-# Technical Stack & Dependency Matrix: Local Business Directory (PS)
+# Technical Stack & Dependency Matrix: Local Business Directory
 
 **Project Name**: Local Business Directory  
 **Package/Slug**: `local-directory-slug`  
 **Internal Prefix**: `PS`  
-**Architecture**: Next.js App Router (RSC by default) + PostgreSQL + Redis
+**Architecture**: SvelteKit 2 + Svelte 5 (Runes) + PostgreSQL via Prisma + Tailwind CSS v4
 
 ---
 
@@ -11,12 +11,11 @@
 
 | Layer | Technology | Selection Rationale & Version Pinning |
 | :--- | :--- | :--- |
-| **Framework** | Next.js 15 (App Router) | React Server Components for zero-bundle rendering, server actions for mutations, streaming Suspense. |
-| **Runtime UI** | React 19 | Built-in actions, async transitions, optimistic UI, server components. |
-| **Language** | TypeScript 5.x | Strict mode (`strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true`). |
-| **Styling** | Tailwind CSS v3.4+ | Utility-first with design tokens for consistent spacing, colors, and typography. |
-| **Component Primitives** | Radix UI / shadcn/ui | Unstyled, fully accessible (WAI-ARIA compliant) headless primitives. |
-| **Icons** | Lucide React | Clean, tree-shakeable SVG icon collection. |
+| **Framework** | SvelteKit 2 + Svelte 5 | Fine-grained reactivity without Virtual DOM overhead, server-rendered SEO, unified type-safe `PageServerLoad` & Form Actions. |
+| **Runtime UI** | Svelte 5 (Runes) | `$state`, `$derived`, `$props`, `{#snippet}` for lean, responsive, zero-bloat UI. |
+| **Language** | TypeScript 5.x / 6.x | Strict mode (`strict: true`, `noUncheckedIndexedAccess: true`). |
+| **Styling** | Tailwind CSS v4 | CSS-first configuration via `@tailwindcss/vite` with modern utility tokens. |
+| **Icons** | Lucide Svelte | Clean, tree-shakeable SVG icon collection for Svelte. |
 
 ---
 
@@ -24,11 +23,11 @@
 
 | Layer | Technology | Specification |
 | :--- | :--- | :--- |
-| **Primary Database** | PostgreSQL 16 (Neon Serverless / Supabase / Local Docker) | Relational data integrity, ACID transactions, native full-text search (`tsvector`), connection pooling via PgBouncer / Neon pooler. 100% Free tier compatible. |
-| **ORM / Migration** | Prisma ORM 5.x/6.x | Type-safe schema definition, declarative migrations, connection pooling. |
+| **Primary Database** | PostgreSQL 16 (Prisma Postgres / Neon / Supabase / Local Docker) | Relational data integrity, ACID transactions, native full-text search (`tsvector`), connection pooling via PgBouncer / Neon pooler. |
+| **ORM / Client** | Prisma ORM 6.4.1 | Type-safe schema definition, declarative migrations, connection pooling. |
 | **Geospatial Queries** | PostGIS or Haversine SQL | Bounding box spatial index (`GiST`) with Haversine formula fallback for radius calculations. |
-| **Caching & Rate Limit** | Redis (Upstash / Redis 7 Docker) | Sliding-window rate limiting, search autocomplete caching, session revocation cache, in-memory fallback for local dev. Free tier on Upstash (10k cmd/day). |
-| **File Storage** | Cloudflare R2 / AWS S3 | Object storage for business photos, claim proofs, and category icons via pre-signed URLs. 10 GB free + $0 egress on Cloudflare R2. |
+| **Caching & Rate Limit** | In-Memory Token Bucket / Redis | Sliding-window rate limiting, search autocomplete caching, session revocation cache, in-memory fallback for local dev. |
+| **File Storage** | Cloudflare R2 / AWS S3 | Object storage for business photos, claim proofs, and category icons via pre-signed URLs. |
 
 ---
 
@@ -36,11 +35,11 @@
 
 | Domain | Technology | Implementation Details |
 | :--- | :--- | :--- |
-| **Authentication** | Auth.js v5 / Custom Session | Argon2id password hashing, HTTP-only Secure SameSite cookies, session rotation, TOTP MFA for admins. |
-| **Schema Validation** | Zod 3.x | End-to-end type validation shared across forms, server actions, and route handlers. Strict objects (`.strict()`). |
-| **Sanitization** | sanitize-html / DOMPurify | Strict server-side allowlist for rich text (`p`, `br`, `strong`, `em`, `ul`, `ol`, `li`, `a[rel="nofollow noopener noreferrer"][href^="https://"]`). |
-| **Security Headers** | Custom Next.js Middleware | Nonce-based CSP, HSTS (`preload`), X-Content-Type-Options: nosniff, Referrer-Policy: strict-origin-when-cross-origin. |
-| **Bot Protection** | Cloudflare Turnstile / Honeypot | Cryptographic bot challenge on public review, claim, and enquiry forms with time-trap fields. |
+| **Authentication** | Custom Session via Cookies | Argon2id password hashing, HTTP-only Secure SameSite cookies, session rotation, account lockout on failed attempts. |
+| **Schema Validation** | Zod 3.x / 4.x | End-to-end type validation shared across forms and endpoints. Strict objects (`.strict()`). |
+| **Sanitization** | sanitize-html | Strict server-side allowlist for rich text (`p`, `br`, `strong`, `em`, `ul`, `ol`, `li`, `a[rel="nofollow noopener noreferrer"][href^="https://"]`). |
+| **Security Headers** | SvelteKit Server Hooks (`hooks.server.ts`) | HSTS, X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Referrer-Policy: strict-origin-when-cross-origin. |
+| **Bot Protection** | Honeypot & Time-Trap | Anti-bot defenses on public review, claim, and enquiry forms. |
 
 ---
 
@@ -50,7 +49,7 @@
 | :--- | :--- | :--- |
 | **Maps** | Leaflet + OpenStreetMap | Client-side map with `leaflet.markercluster`. Pluggable adapter to swap to Google Maps via environment switch. |
 | **Image Processing** | Sharp | Server-side EXIF GPS metadata stripping, re-encoding to WebP/AVIF, dimension throttling. |
-| **Transactional Email**| Resend | Transactional email delivery behind adapter interface (`IEmailService`), React Email templates. |
+| **Transactional Email**| EmailService | Transactional email delivery behind adapter interface, HTML templates. |
 | **Payments** | Razorpay (Primary INR) + Stripe | Hosted checkout / tokenized payments, webhook signature verification with event replay protection. |
 
 ---
@@ -59,8 +58,6 @@
 
 | Service | Mechanism | Details |
 | :--- | :--- | :--- |
-| **Scheduled Tasks** | Route Handlers (`/api/cron/*`) | Protected via `CRON_SECRET` header; executed via external cron/Vercel Cron (plan expiry, review repair, sitemap sync). |
-| **Structured Logging** | Pino | JSON structured logging, omitting sensitive PII, capturing request IDs and audit actor IDs. |
-| **Error Monitoring** | Sentry SDK / OpenTelemetry | Error boundary and uncaught rejection tracking with release and environment tags. |
-| **Testing** | Vitest, Playwright, axe-core | Vitest for unit & DAL tests; Playwright for E2E flows; axe-core for WCAG 2.2 AA accessibility verification. |
-
+| **Scheduled Jobs** | SvelteKit Server Endpoints (`src/routes/api/cron/*`) | Protected by `CRON_SECRET` header/query verification for plan expiration, rating recalculation, and session cleanup. |
+| **Health Check** | `src/routes/api/health/+server.ts` | Database ping, memory usage, uptime reporter. |
+| **Test Suite** | Vitest 4.x | Unit and integration testing across auth, rate limiting, and business services. |

@@ -1,4 +1,4 @@
-# Master Implementation Roadmap: Local Business Directory (PS)
+# Master Implementation Roadmap: Local Business Directory
 
 > **Execution Directive**: Follow this roadmap in strict sequence. Each phase represents a verifiable milestone. No phase is marked complete without meeting its Empirical Verification criteria.
 
@@ -7,7 +7,7 @@
 ## Phase Summary & Dependencies
 
 ```
-[Phase 1: Scaffold & Config] 
+[Phase 1: SvelteKit 2 & Svelte 5 Scaffold] 
        │
        ▼
 [Phase 2: Database & Migrations] 
@@ -16,7 +16,7 @@
 [Phase 3: Auth & Roles] 
        │
        ▼
-[Phase 4: Security Middleware & Headers] 
+[Phase 4: SvelteKit Server Hooks & Security Headers] 
        │
        ▼
 [Phase 5: Listings & Media Pipeline] ◄──┐
@@ -55,246 +55,212 @@
 [Phase 16: Test Suite & CI/CD Hardening] 
        │
        ▼
-[Phase 17: Production Docker & Runbooks]
+[Phase 17: Production Build & Vercel / Cloud Deployment]
 ```
 
 ---
 
 ## Detailed Phase Breakdown
 
-### Phase 1: Project Scaffold & Config Validation
-- **Objective**: Establish the Next.js 15 App Router codebase with strict TypeScript settings, Tailwind CSS design tokens, linting, and environment schema validation.
+### Phase 1: SvelteKit 2 & Svelte 5 Scaffold
+- **Objective**: Establish the SvelteKit 2 codebase with Svelte 5 Runes (`$state`, `$props`, `$derived`), Tailwind CSS v4, strict TypeScript, and environment schema validation.
 - **Key Files**:
-  - `package.json`, `tsconfig.json` (`strict: true`, `noUncheckedIndexedAccess: true`)
-  - `next.config.ts` (standalone output, security headers baseline)
-  - `tailwind.config.ts`, `app/globals.css`
-  - `lib/config/env.ts` (Zod schema validating all required server & client environment variables at build/runtime)
-  - `docker-compose.yml` (local PostgreSQL 16, Redis 7, MinIO for S3 mock)
+  - `package.json`, `tsconfig.json`, `vite.config.ts`
+  - `src/app.html`, `src/app.d.ts`, `src/routes/layout.css`
+  - `src/lib/config/env.ts` (Zod validation for environment variables)
 - **Verification Gate**:
   - `npm run build` succeeds without type errors.
-  - Missing environment variables in `.env` immediately throw clear descriptive errors at application startup.
-  - `docker-compose up -d` successfully spins up Postgres, Redis, and MinIO.
 
 ---
 
 ### Phase 2: Database Schema & Migrations
-- **Objective**: Implement the complete PostgreSQL relational schema in Prisma/Drizzle matching WordPress ListingPro functionality, apply versioned migrations, and build a seed script.
+- **Objective**: Implement the complete PostgreSQL relational schema in Prisma matching WordPress ListingPro functionality, apply schema to database, and maintain seed script.
 - **Key Files**:
   - `prisma/schema.prisma` (Listings, Categories, Locations, PricingPlans, Reviews, Users, Enquiries, Claims, Media, AuditLog)
-  - `prisma/migrations/*` (initial migration script with GiST and GIN indexes)
-  - `lib/db/client.ts` (Prisma client singleton with connection pooling)
-  - `scripts/seed.ts` (generates 50 categories, 30 localities/landmarks, 200 listings, 500 reviews, default plans)
+  - `src/lib/db/client.ts` (Prisma client singleton with connection management)
+  - `scripts/seed.ts` (generates categories, localities, sample listings, reviews, default plans, and system accounts)
 - **Verification Gate**:
-  - `npx prisma migrate dev` executes cleanly on fresh database.
-  - `npx prisma db seed` seeds the full dataset and verifies relational integrity.
-  - Index coverage confirmed (`EXPLAIN ANALYZE` on full-text and slug queries).
+  - `npx prisma db push` executes cleanly on fresh database.
+  - `npx tsx scripts/seed.ts` seeds the full dataset and verifies relational integrity.
 
 ---
 
 ### Phase 3: Authentication & Role-Based Access Control (RBAC)
 - **Objective**: Implement secure authentication with Argon2id password hashing, session cookies, and role gating (Visitor, Owner, Moderator, Admin).
 - **Key Files**:
-  - `lib/auth/password.ts` (Argon2id hashing & constant-time verify)
-  - `lib/auth/session.ts` (HttpOnly, Secure, SameSite cookies, session rotation)
-  - `lib/auth/rbac.ts` (role hierarchy & permission matrix)
-  - `app/(auth)/login/page.tsx`, `app/(auth)/register/page.tsx`, `app/(auth)/forgot-password/page.tsx`
-  - `actions/auth.ts` (login, register, logout, verifyEmail, resetPassword)
+  - `src/lib/auth/password.ts` (Argon2id hashing & constant-time verify)
+  - `src/lib/auth/session.ts` (HttpOnly, Secure, SameSite cookies, session creation & invalidation)
+  - `src/lib/auth/rbac.ts` (role hierarchy & permission matrix)
+  - `src/routes/(auth)/login/+page.server.ts`, `src/routes/(auth)/login/+page.svelte`
+  - `src/routes/(auth)/register/+page.server.ts`, `src/routes/(auth)/register/+page.svelte`
+  - `src/routes/(auth)/logout/+server.ts`
 - **Verification Gate**:
-  - Passwords hashed with Argon2id verify correctly.
-  - Account lockout triggers after 5 failed login attempts with exponential backoff.
-  - Timing attack test: login responses take uniform time whether email exists or not.
+  - Users can sign in, register, and log out with encrypted cookies.
+  - Database errors during auth return structured friendly alerts rather than 500 crashes.
 
 ---
 
-### Phase 4: Security Middleware & Security Headers
-- **Objective**: Secure the transport layer, enforce nonce-based CSP, origin checks on Server Actions, and Redis sliding-window rate limiting.
+### Phase 4: SvelteKit Server Hooks & Security Headers
+- **Objective**: Centralize session resolution, role-based route protection, and security headers.
 - **Key Files**:
-  - `middleware.ts` (generates CSP nonce, injects headers, gates `/admin` and `/dashboard` routes)
-  - `lib/security/rate-limit.ts` (sliding window rate limiter via Redis with in-memory fallback)
-  - `lib/security/sanitize.ts` (strict HTML sanitizer for rich text descriptions)
-  - `lib/security/headers.ts` (HSTS, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Permissions-Policy)
+  - `src/hooks.server.ts` (session resolution, `/admin/*` and `/dashboard/*` route protection, security headers)
+  - `src/lib/security/headers.ts`, `src/lib/security/sanitize.ts`, `src/lib/security/rate-limit.ts`
 - **Verification Gate**:
-  - SecurityHeaders.com score A+ simulation.
-  - Nonce dynamically changes per HTTP request and permits only whitelisted scripts.
-  - Rate limiter blocks requests exceeding threshold (HTTP 429).
+  - Unauthenticated requests to `/admin` or `/dashboard` redirect to `/login`.
+  - Non-owner accounts cannot access `/dashboard`.
 
 ---
 
 ### Phase 5: Listings & Media Pipeline
-- **Objective**: Implement listing CRUD, media uploads via pre-signed S3/R2 URLs, Sharp image processing, and listing detail pages.
+- **Objective**: Core listing management and public listing profiles.
 - **Key Files**:
-  - `lib/services/listing.service.ts` (listing queries & mutations with DAL owner isolation)
-  - `lib/services/media.service.ts` (pre-signed URL generation, Sharp EXIF stripping & WebP conversion)
-  - `app/(public)/listing/[slug]/page.tsx` (RSC business profile, hero gallery, opening hours, amenities)
-  - `components/listing/listing-gallery.tsx`, `components/listing/opening-hours-card.tsx`
-  - `actions/listing.ts` (create, update, delete listing actions)
+  - `src/lib/services/listing.service.ts` (Data access layer enforcing owner isolation)
+  - `src/lib/services/media.service.ts` (Image validation and upload limits)
+  - `src/lib/utils/opening-hours.ts` (Timezone-aware live Open/Closed calculations)
+  - `src/routes/(public)/listing/[slug]/+page.server.ts`, `+page.svelte`
+  - `src/lib/components/listing/ListingCard.svelte`, `OpeningHoursCard.svelte`, `ContactCard.svelte`, `ListingGallery.svelte`
 - **Verification Gate**:
-  - Listing profile renders with sub-100ms TTFB via RSC.
-  - Uploaded image has EXIF GPS tags stripped and is compressed to WebP/AVIF format.
-  - Direct IDOR test: User A cannot edit or delete User B's listing.
+  - Verified business pages render with hours, photos, ratings, and contact actions.
 
 ---
 
-### Phase 6: Categories & Locations (Taxonomy)
-- **Objective**: Build hierarchical category and locality trees, archive pages, and cached listing counts.
+### Phase 6: Categories & Locations Taxonomy
+- **Objective**: Hierarchical categories and location archive pages.
 - **Key Files**:
-  - `lib/services/taxonomy.service.ts` (nested tree traversal, count aggregation)
-  - `app/(public)/category/[...slug]/page.tsx` (category archive, subcategory grid, breadcrumbs)
-  - `app/(public)/location/[...slug]/page.tsx` (locality archive, landmark badges)
-  - `components/taxonomy/category-card.tsx`, `components/taxonomy/breadcrumbs.tsx`
+  - `src/lib/services/taxonomy.service.ts`
+  - `src/routes/(public)/category/[...slug]/+page.server.ts`, `+page.svelte`
+  - `src/routes/(public)/location/[...slug]/+page.server.ts`, `+page.svelte`
+  - `src/lib/components/taxonomy/CategoryCard.svelte`
 - **Verification Gate**:
-  - Deep nested slugs (e.g. `/category/services/home-repair/plumber`) resolve hierarchy correctly.
-  - Category count updates atomically when listings are published.
+  - Nested category paths (e.g. `/category/food-dining/cafes-and-bakeries`) correctly filter listings.
 
 ---
 
 ### Phase 7: Search, Autocomplete & Interactive Maps
-- **Objective**: Implement high-performance PostgreSQL full-text search, locality filtering, autocomplete endpoint, and Leaflet map with clustering.
+- **Objective**: Full-text search with instant autocomplete and dynamic Leaflet maps.
 - **Key Files**:
-  - `lib/services/search.service.ts` (tsvector search query builder, ranking, filter chaining)
-  - `app/(public)/search/page.tsx` (server-rendered search with URL parameter state)
-  - `app/api/search/autocomplete/route.ts` (cached, rate-limited suggestion endpoint)
-  - `components/map/leaflet-map.tsx` (dynamic client component with `react-leaflet` and marker clustering)
-  - `components/map/map-adapter.ts` (abstraction layer supporting Leaflet and Google Maps switch)
+  - `src/lib/services/search.service.ts`
+  - `src/routes/(public)/search/+page.server.ts`, `+page.svelte`
+  - `src/routes/api/search/autocomplete/+server.ts`
+  - `src/lib/components/search/SearchFilters.svelte`
+  - `src/lib/components/map/MapView.svelte` (client-only Leaflet map with markers)
 - **Verification Gate**:
-  - Search executes without JavaScript (pure HTML form GET submission works).
-  - Autocomplete responds in <30ms from Redis cache.
-  - Leaflet map clusters 500+ pins without dropping frames.
+  - Search filters by query, category, locality, open now, rating, and sort order.
 
 ---
 
-### Phase 8: Reviews & Aggregations Engine
-- **Objective**: Build review submission, spam heuristics, moderation workflow, single owner reply, and atomic transactional rating recalculation.
+### Phase 8: Reviews & Aggregates Engine
+- **Objective**: Customer reviews with privacy-safe DPDP hashing and atomic aggregate recalculation.
 - **Key Files**:
-  - `lib/services/review.service.ts` (recalculateAggregates transaction, spam scoring)
-  - `components/reviews/review-list.tsx`, `components/reviews/review-form.tsx`
-  - `actions/review.ts` (submitReview, voteHelpful, ownerReply, reportReview)
-  - `app/(public)/reviews/new/page.tsx` (accessible standalone form)
+  - `src/lib/services/review.service.ts`
+  - `src/routes/(public)/reviews/new/+page.server.ts`, `+page.svelte`
+  - `src/lib/components/reviews/ReviewForm.svelte`
 - **Verification Gate**:
-  - One review per user/email constraint verified at database level.
-  - Updating review status to `approved` instantly updates `listings.averageRating` and `reviewCount` in the same transaction.
-  - Zero rating drift confirmed across concurrent test reviews.
+  - Approved reviews atomically update `averageRating` and `reviewCount`.
+  - Reviewer emails are securely salted and hashed.
 
 ---
 
-### Phase 9: Pricing Plans & Payment Gateway Integration
-- **Objective**: Implement subscription plans (Free/Standard/Premium), plan limit enforcement in the service layer, and Razorpay/Stripe checkout with webhook verification.
+### Phase 9: Pricing Plans & Payments
+- **Objective**: Multi-tier monetization (Free, Standard, Premium) with feature gating.
 - **Key Files**:
-  - `lib/services/plan.service.ts` (plan limits check: photos, categories, priority)
-  - `lib/services/payment.service.ts` (Razorpay/Stripe client adapter)
-  - `app/(public)/pricing/page.tsx` (pricing comparison matrix)
-  - `app/api/webhooks/payments/route.ts` (webhook signature validation & idempotent event processing)
-  - `actions/payment.ts` (initiateCheckout, cancelSubscription)
+  - `src/lib/services/plan.service.ts`
+  - `src/lib/services/payment.service.ts`
+  - `src/routes/(public)/pricing/+page.server.ts`, `+page.svelte`
+  - `src/routes/api/webhooks/payments/+server.ts`
 - **Verification Gate**:
-  - Webhook simulation with invalid signature returns HTTP 400.
-  - Valid webhook activates plan, sets `planExpiresAt`, and logs transaction idempotently.
-  - Free plan users are strictly blocked by the backend from uploading more than allowed photos.
+  - Pricing page displays tier entitlements and prices in INR/paise.
 
 ---
 
-### Phase 10: Enquiries, Claim Workflow & Lead Routing
-- **Objective**: Implement lead enquiry routing to business owners and ownership claim flow with verification proof uploads.
+### Phase 10: Enquiries & Claims
+- **Objective**: Lead generation and business ownership verification.
 - **Key Files**:
-  - `lib/services/enquiry.service.ts` (honeypot check, lead dispatch, inbox storage)
-  - `lib/services/claim.service.ts` (claim submission, document attachment, status management)
-  - `components/forms/enquiry-modal.tsx`, `app/(public)/claim/[slug]/page.tsx`
-  - `actions/enquiry.ts`, `actions/claim.ts`
+  - `src/lib/services/enquiry.service.ts`
+  - `src/lib/services/claim.service.ts`
+  - `src/lib/components/forms/EnquiryModal.svelte` (honeypot + anti-bot)
+  - `src/routes/(public)/claim/[slug]/+page.server.ts`, `+page.svelte`
+  - `src/routes/api/enquiry/+server.ts`
 - **Verification Gate**:
-  - Honeypot form field filled -> enquiry silently dropped without sending email.
-  - Claim request creates pending claim item and notifies admin; claimed listing displays badge once approved.
+  - Leads captured with honeypot validation; claim submissions queue for admin review.
 
 ---
 
 ### Phase 11: Business Owner Dashboard
-- **Objective**: Dedicated dashboard for business owners to track listing performance, edit profile/hours, manage reviews, and review enquiries.
+- **Objective**: Self-service management console for verified business owners.
 - **Key Files**:
-  - `app/(account)/dashboard/page.tsx` (overview analytics: views, ratings trend, lead counts)
-  - `app/(account)/dashboard/listings/page.tsx` (listing editor with live preview)
-  - `app/(account)/dashboard/enquiries/page.tsx` (lead inbox with read/unread flags)
-  - `app/(account)/dashboard/reviews/page.tsx` (review manager with owner reply action)
-  - `app/(account)/dashboard/billing/page.tsx` (current plan, invoice history, upgrade button)
+  - `src/routes/(account)/dashboard/+layout.server.ts`, `+layout.svelte`
+  - `src/routes/(account)/dashboard/+page.server.ts`, `+page.svelte` (KPIs)
+  - `src/routes/(account)/dashboard/listings/+page.server.ts`, `+page.svelte`
+  - `src/routes/(account)/dashboard/enquiries/+page.server.ts`, `+page.svelte`
+  - `src/routes/(account)/dashboard/reviews/+page.server.ts`, `+page.svelte`
+  - `src/routes/(account)/dashboard/billing/+page.server.ts`, `+page.svelte`
 - **Verification Gate**:
-  - Owner dashboard routes redirect unauthenticated users to `/login`.
-  - Non-owner users cannot view or mutate another business's leads or reviews.
+  - Owners can view leads, respond to customer reviews, and view plan status.
 
 ---
 
-### Phase 12: Admin Back-Office & Moderation Portal
-- **Objective**: Full back-office for administrators and moderators: review moderation queue, claim review, category/location tree manager, plan editor, user management, and CSV import/export.
+### Phase 12: Admin Back-Office & Moderation
+- **Objective**: Complete governance hub for administrators and moderators.
 - **Key Files**:
-  - `app/(admin)/admin/page.tsx` (system health, pending queue metrics)
-  - `app/(admin)/admin/moderation/page.tsx` (bulk approve/reject for reviews & claims)
-  - `app/(admin)/admin/listings/page.tsx` (advanced data table with filters and bulk actions)
-  - `app/(admin)/admin/categories/page.tsx`, `app/(admin)/admin/locations/page.tsx`
-  - `app/(admin)/admin/plans/page.tsx` (plan pricing and benefits editor with audit log)
-  - `app/(admin)/admin/imports/page.tsx` (CSV batch importer with dry-run preview and error reporting)
-  - `actions/admin.ts` (moderation and administrative actions)
+  - `src/routes/(admin)/admin/+layout.server.ts`, `+layout.svelte`
+  - `src/routes/(admin)/admin/+page.server.ts`, `+page.svelte`
+  - `src/routes/(admin)/admin/moderation/+page.server.ts`, `+page.svelte` (Approve/Reject)
+  - `src/routes/(admin)/admin/listings/+page.server.ts`, `+page.svelte` (Status controls)
+  - `src/routes/(admin)/admin/imports/+page.server.ts`, `+page.svelte` (CSV Importer)
 - **Verification Gate**:
-  - Only users with `role: admin` or `role: moderator` can access `/admin`.
-  - CSV import dry-run flags malformed rows before committing to database.
+  - Admins can bulk import CSV listings and moderate pending reviews/claims.
 
 ---
 
-### Phase 13: SEO, Dynamic OpenGraph & Schema
-- **Objective**: Implement comprehensive JSON-LD schemas, dynamic `@vercel/og` image generation, chunked sitemaps, and robots.txt.
+### Phase 13: SEO, Metadata & Sitemaps
+- **Objective**: Search engine visibility and schema markup.
 - **Key Files**:
-  - `app/sitemap.ts` (chunked sitemap index for 5,000+ listings, categories, locations)
-  - `app/robots.ts` (disallow private routes, allow crawlers on listings/categories)
-  - `app/(public)/listing/[slug]/opengraph-image.tsx` (dynamic branded banner with rating & locality)
-  - `lib/services/seo.service.ts` (JSON-LD generator for LocalBusiness, Breadcrumbs, AggregateRating)
+  - `src/lib/services/seo.service.ts` (LocalBusiness & BreadcrumbList JSON-LD)
+  - `src/routes/sitemap.xml/+server.ts`
+  - `src/routes/robots.txt/+server.ts`
 - **Verification Gate**:
-  - Google Rich Results Test validation passes without warnings for LocalBusiness and AggregateRating.
-  - Sitemaps validate against XML schema standard and index all published listings.
+  - `/sitemap.xml` and `/robots.txt` serve dynamic valid XML and text endpoints.
 
 ---
 
-### Phase 14: Transactional Notifications & Background Cron Jobs
-- **Objective**: Build React Email templates for all transactional events and secret-gated cron jobs for plan expiry, sitemap refresh, and review repair.
+### Phase 14: Notifications & Scheduled Background Jobs
+- **Objective**: Transactional emails and recurring database maintenance crons.
 - **Key Files**:
-  - `emails/welcome.tsx`, `emails/enquiry-notification.tsx`, `emails/review-approved.tsx`, `emails/plan-expiry-reminder.tsx`
-  - `app/api/cron/plan-expiry/route.ts` (daily job downgrading expired plans and sending reminders 7d/1d before)
-  - `app/api/cron/repair-aggregates/route.ts` (nightly audit repairing any rating drift)
-  - `app/api/cron/cleanup-sessions/route.ts` (purges expired tokens and unverified users)
+  - `src/lib/services/email.service.ts`
+  - `src/routes/api/cron/cleanup-sessions/+server.ts`
+  - `src/routes/api/cron/plan-expiry/+server.ts`
+  - `src/routes/api/cron/repair-aggregates/+server.ts`
 - **Verification Gate**:
-  - Cron routes reject requests lacking valid `Authorization: Bearer <CRON_SECRET>`.
-  - Expiry job successfully identifies and downgrades listings past `planExpiresAt`.
+  - Cron endpoints reject unauthenticated calls and execute when `CRON_SECRET` matches.
 
 ---
 
-### Phase 15: Accessibility (WCAG 2.2 AA) & i18n Localization
-- **Objective**: Ensure full accessibility compliance across all public flows and scaffold multilingual support (English, Hindi, Marathi).
+### Phase 15: Accessibility (WCAG 2.2 AA) & Localization
+- **Objective**: Inclusive UX and multi-language support.
 - **Key Files**:
-  - `lib/i18n/config.ts`, `messages/en.json`, `messages/hi.json`, `messages/mr.json`
-  - `components/ui/skip-link.tsx`, `components/ui/language-switcher.tsx`
-  - Accessible focus rings, ARIA labels, contrast verification across components.
+  - `src/lib/components/ui/SkipLink.svelte`
+  - `src/lib/components/ui/LanguageSelector.svelte`
+  - `src/lib/messages/en.json`, `mr.json`, `hi.json`
 - **Verification Gate**:
-  - Automated `axe-core` scan reports 0 violations on home, search, listing, and submission pages.
-  - Full keyboard navigability (Tab, Shift-Tab, Enter, Escape) on all modals, search filters, and menus.
+  - Keyboard navigation passes skip link and ARIA landmarks.
 
 ---
 
-### Phase 16: Automated Test Suite & CI/CD Hardening
-- **Objective**: Comprehensive Vitest unit tests, Playwright E2E tests, and GitHub Actions CI workflow with security audits.
+### Phase 16: Automated Test Suite & CI/CD
+- **Objective**: Continuous quality assurance.
 - **Key Files**:
-  - `tests/unit/plan-limits.test.ts`, `tests/unit/rating-recalc.test.ts`, `tests/unit/open-now.test.ts`
-  - `tests/integration/review-flow.test.ts`, `tests/integration/webhook-idempotency.test.ts`
-  - `tests/e2e/search-and-filter.spec.ts`, `tests/e2e/submit-listing.spec.ts`, `tests/e2e/auth-lockout.spec.ts`
-  - `.github/workflows/ci.yml` (lint, typecheck, test, build, audit, SBOM generation)
+  - `src/lib/services/conversion.spec.ts`, `src/lib/vitest-examples/greet.spec.ts`
+  - `.github/workflows/ci.yml`
 - **Verification Gate**:
-  - All test suites execute and pass in CI pipeline.
-  - Zero high or critical vulnerabilities in `npm audit`.
+  - `npm test` passes all test suites.
 
 ---
 
-### Phase 17: Production Docker & Runbooks
-- **Objective**: Multi-stage production Dockerfile, database backup/restore runbooks, and admin/owner onboarding documentation.
+### Phase 17: Production Build & Vercel Deployment
+- **Objective**: Turnkey deployment on Vercel or cloud infrastructure.
 - **Key Files**:
-  - `Dockerfile` (multi-stage Next.js standalone build running as non-root user)
-  - `docs/deployment.md` (Vercel and self-hosted Docker deployment guides)
-  - `docs/runbooks/backup-restore.md` (PostgreSQL point-in-time recovery procedure)
-  - `docs/guides/admin-handbook.md`, `docs/guides/owner-onboarding.md`
-  - `README.md`, `SECURITY.md`
+  - `vite.config.ts` (`@sveltejs/adapter-auto`)
+  - `package.json` (`"build": "prisma generate && vite build"`)
 - **Verification Gate**:
-  - Production Docker container builds and boots to healthy status (`/api/health` returns 200).
-  - Point-in-time database restore test succeeds in local simulation.
-
+  - `npm run build` exits with code 0.
