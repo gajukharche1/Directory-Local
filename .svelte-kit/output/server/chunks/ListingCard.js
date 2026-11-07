@@ -1,0 +1,163 @@
+import { D as FILENAME, E as escape_html, S as attr, a as derived, g as push_element, h as pop_element, t as attr_class } from "./server.js";
+import { t as Star } from "./star.js";
+import { n as Message_circle, r as Map_pin, t as getOpeningStatus } from "./opening-hours.js";
+import { t as Phone } from "./phone.js";
+import { t as Sparkles } from "./sparkles.js";
+import { t as Shield_check } from "./shield-check.js";
+// src/lib/components/listing/ListingCard.svelte
+ListingCard[FILENAME] = "src/lib/components/listing/ListingCard.svelte";
+function ListingCard($$renderer, $$props) {
+	$$renderer.component(($$renderer) => {
+		let { listing } = $$props;
+		let rating = derived(() => Number(listing.averageRating));
+		let openStatus = derived(() => getOpeningStatus(listing.openingHours));
+		let photo = derived(() => listing.media?.[0]?.url);
+		let primaryCategory = derived(() => listing.categories?.[0]?.category);
+		let cleanPhone = derived(() => listing.phone?.replace(/\D/g, ""));
+		let cleanWhatsapp = derived(() => (listing.whatsapp || listing.phone)?.replace(/\D/g, ""));
+		let canCall = derived(() => (listing.plan?.callButtonAllowed ?? true) && cleanPhone());
+		let canWhatsapp = derived(() => (listing.plan?.whatsappAllowed ?? true) && cleanWhatsapp());
+		$$renderer.push(`<div class="group rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-300 flex flex-col justify-between">`);
+		push_element($$renderer, "div", 47, 0);
+		$$renderer.push(`<div>`);
+		push_element($$renderer, "div", 48, 2);
+		$$renderer.push(`<div class="relative h-44 w-full bg-slate-100 overflow-hidden">`);
+		push_element($$renderer, "div", 50, 4);
+		if (photo()) {
+			$$renderer.push(`<!--[0--><img${attr("src", photo())}${attr("alt", listing.title)} class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"/>`);
+			push_element($$renderer, "img", 52, 8);
+			pop_element();
+		} else {
+			$$renderer.push(`<!--[-1--><div class="flex h-full w-full items-center justify-center bg-gradient-to-tr from-slate-100 to-slate-200 text-slate-400 text-xs font-semibold">`);
+			push_element($$renderer, "div", 58, 8);
+			$$renderer.push(`<span>`);
+			push_element($$renderer, "span", 59, 10);
+			$$renderer.push(`${escape_html(listing.title.substring(0, 2).toUpperCase())}</span>`);
+			pop_element();
+			$$renderer.push(`</div>`);
+			pop_element();
+		}
+		$$renderer.push(`<!--]--> <div class="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">`);
+		push_element($$renderer, "div", 64, 6);
+		if (listing.featured) {
+			$$renderer.push(`<!--[0--><span class="inline-flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">`);
+			push_element($$renderer, "span", 66, 10);
+			Sparkles($$renderer, { class: "h-3 w-3" });
+			$$renderer.push(`<!----> <span>`);
+			push_element($$renderer, "span", 68, 12);
+			$$renderer.push(`Featured</span>`);
+			pop_element();
+			$$renderer.push(`</span>`);
+			pop_element();
+		} else $$renderer.push("<!--[-1-->");
+		$$renderer.push(`<!--]--> `);
+		if (listing.claimStatus === "verified") {
+			$$renderer.push(`<!--[0--><span class="inline-flex items-center gap-1 bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">`);
+			push_element($$renderer, "span", 72, 10);
+			Shield_check($$renderer, { class: "h-3 w-3" });
+			$$renderer.push(`<!----> <span>`);
+			push_element($$renderer, "span", 74, 12);
+			$$renderer.push(`Verified</span>`);
+			pop_element();
+			$$renderer.push(`</span>`);
+			pop_element();
+		} else $$renderer.push("<!--[-1-->");
+		$$renderer.push(`<!--]--></div>`);
+		pop_element();
+		$$renderer.push(` <div class="absolute bottom-2.5 left-2.5">`);
+		push_element($$renderer, "div", 80, 6);
+		$$renderer.push(`<span${attr_class(`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md shadow-sm ${openStatus().isOpen ? "bg-emerald-600/90 text-white" : "bg-white/90 text-slate-600"}`)}>`);
+		push_element($$renderer, "span", 81, 8);
+		$$renderer.push(`${escape_html(openStatus().isOpen ? "Open Now" : "Closed")}</span>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(` <div class="p-4 space-y-2">`);
+		push_element($$renderer, "div", 90, 4);
+		if (primaryCategory()) {
+			$$renderer.push(`<!--[0--><span class="text-[11px] font-medium text-slate-500 block truncate">`);
+			push_element($$renderer, "span", 92, 8);
+			$$renderer.push(`${escape_html(primaryCategory().name)}</span>`);
+			pop_element();
+		} else $$renderer.push("<!--[-1-->");
+		$$renderer.push(`<!--]--> <a${attr("href", `/listing/${listing.slug}`)} class="block group-hover:text-indigo-600 transition-colors">`);
+		push_element($$renderer, "a", 97, 6);
+		$$renderer.push(`<h3 class="font-bold text-base text-slate-900 line-clamp-1 leading-snug">`);
+		push_element($$renderer, "h3", 98, 8);
+		$$renderer.push(`${escape_html(listing.title)}</h3>`);
+		pop_element();
+		$$renderer.push(`</a>`);
+		pop_element();
+		$$renderer.push(` <div class="flex items-center gap-2 text-xs">`);
+		push_element($$renderer, "div", 103, 6);
+		$$renderer.push(`<div class="flex items-center gap-1 font-semibold text-slate-800">`);
+		push_element($$renderer, "div", 104, 8);
+		Star($$renderer, { class: "h-3.5 w-3.5 fill-amber-400 text-amber-400" });
+		$$renderer.push(`<!----> <span>`);
+		push_element($$renderer, "span", 106, 10);
+		$$renderer.push(`${escape_html(rating() > 0 ? rating().toFixed(1) : "New")}</span>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(` <span class="text-slate-400 text-[11px]">`);
+		push_element($$renderer, "span", 108, 8);
+		$$renderer.push(`(${escape_html(listing.reviewCount)} ${escape_html(listing.reviewCount === 1 ? "review" : "reviews")})</span>`);
+		pop_element();
+		$$renderer.push(` <span class="text-slate-300">`);
+		push_element($$renderer, "span", 111, 8);
+		$$renderer.push(`•</span>`);
+		pop_element();
+		$$renderer.push(` <div class="flex items-center gap-1 text-slate-500 text-[11px] truncate">`);
+		push_element($$renderer, "div", 112, 8);
+		Map_pin($$renderer, { class: "h-3 w-3 shrink-0" });
+		$$renderer.push(`<!----> <span class="truncate">`);
+		push_element($$renderer, "span", 114, 10);
+		$$renderer.push(`${escape_html(listing.locality)}</span>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(` <div class="px-4 pb-4 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">`);
+		push_element($$renderer, "div", 121, 2);
+		$$renderer.push(`<div class="flex items-center gap-2">`);
+		push_element($$renderer, "div", 122, 4);
+		if (canCall()) {
+			$$renderer.push(`<!--[0--><a${attr("href", `tel:${cleanPhone()}`)} class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition" title="Call Business">`);
+			push_element($$renderer, "a", 124, 8);
+			Phone($$renderer, { class: "h-3.5 w-3.5" });
+			$$renderer.push(`<!----></a>`);
+			pop_element();
+		} else $$renderer.push("<!--[-1-->");
+		$$renderer.push(`<!--]--> `);
+		if (canWhatsapp()) {
+			$$renderer.push(`<!--[0--><a${attr("href", `https://wa.me/${cleanWhatsapp()}?text=Hi%2C%20found%20your%20business%20on%20Pimple%20Saudagar%20Directory`)} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition" title="WhatsApp Chat">`);
+			push_element($$renderer, "a", 133, 8);
+			Message_circle($$renderer, { class: "h-3.5 w-3.5" });
+			$$renderer.push(`<!----></a>`);
+			pop_element();
+		} else $$renderer.push("<!--[-1-->");
+		$$renderer.push(`<!--]--></div>`);
+		pop_element();
+		$$renderer.push(` <a${attr("href", `/listing/${listing.slug}`)} class="text-xs font-semibold text-indigo-600 hover:text-indigo-700">`);
+		push_element($$renderer, "a", 145, 4);
+		$$renderer.push(`View Profile →</a>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+	}, ListingCard);
+}
+ListingCard.render = function() {
+	throw new Error("Component.render(...) is no longer valid in Svelte 5. See https://svelte.dev/docs/svelte/v5-migration-guide#Components-are-no-longer-classes for more information");
+};
+export { ListingCard as t };
+
+//# sourceMappingURL=ListingCard.js.map

@@ -1,0 +1,133 @@
+import { D as FILENAME, E as escape_html, S as attr, c as head, g as push_element, h as pop_element } from "../../../../chunks/server.js";
+import "../../../../chunks/forms.js";
+import { t as Lock } from "../../../../chunks/lock.js";
+import { t as Mail } from "../../../../chunks/mail.js";
+import { t as Circle_alert } from "../../../../chunks/circle-alert.js";
+// src/routes/(auth)/login/+page.svelte
+_page[FILENAME] = "src/routes/(auth)/login/+page.svelte";
+function _page($$renderer, $$props) {
+	$$renderer.component(($$renderer) => {
+		let { data, form } = $$props;
+		let isPending = false;
+		head("8k30lk", $$renderer, ($$renderer) => {
+			$$renderer.title(($$renderer) => {
+				$$renderer.push(`<title>Sign In | Pimple Saudagar Directory</title>`);
+			});
+		});
+		$$renderer.push(`<div>`);
+		push_element($$renderer, "div", 15, 0);
+		$$renderer.push(`<div class="mb-6">`);
+		push_element($$renderer, "div", 16, 2);
+		$$renderer.push(`<h2 class="text-xl font-bold tracking-tight text-foreground">`);
+		push_element($$renderer, "h2", 17, 4);
+		$$renderer.push(`Sign in to your account</h2>`);
+		pop_element();
+		$$renderer.push(` <p class="text-xs text-muted-foreground mt-1">`);
+		push_element($$renderer, "p", 18, 4);
+		$$renderer.push(`Access your listings, reviews, and community dashboard</p>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(` `);
+		if (form?.error) {
+			$$renderer.push(`<!--[0--><div class="mb-4 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive flex items-start gap-2">`);
+			push_element($$renderer, "div", 24, 4);
+			Circle_alert($$renderer, { class: "h-4 w-4 mt-0.5 shrink-0" });
+			$$renderer.push(`<!----> <span>`);
+			push_element($$renderer, "span", 26, 6);
+			$$renderer.push(`${escape_html(form.error)}</span>`);
+			pop_element();
+			$$renderer.push(`</div>`);
+			pop_element();
+		} else $$renderer.push("<!--[-1-->");
+		$$renderer.push(`<!--]--> <form method="POST" class="space-y-4">`);
+		push_element($$renderer, "form", 30, 2);
+		$$renderer.push(`<input type="hidden" name="redirectTo"${attr("value", data.redirectTo)}/>`);
+		push_element($$renderer, "input", 41, 4);
+		pop_element();
+		$$renderer.push(` <div>`);
+		push_element($$renderer, "div", 43, 4);
+		$$renderer.push(`<label for="email" class="block text-xs font-semibold text-foreground mb-1">`);
+		push_element($$renderer, "label", 44, 6);
+		$$renderer.push(`Email address</label>`);
+		pop_element();
+		$$renderer.push(` <div class="relative">`);
+		push_element($$renderer, "div", 45, 6);
+		Mail($$renderer, { class: "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" });
+		$$renderer.push(`<!----> <input id="email" type="email" name="email" required="" autocomplete="email" placeholder="name@example.com" class="w-full rounded-lg border bg-background py-2 pl-9 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary"/>`);
+		push_element($$renderer, "input", 47, 8);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(` `);
+		if (form?.fieldErrors?.email) {
+			$$renderer.push(`<!--[0--><p class="mt-1 text-xs text-destructive">`);
+			push_element($$renderer, "p", 58, 8);
+			$$renderer.push(`${escape_html(form.fieldErrors.email[0])}</p>`);
+			pop_element();
+		} else $$renderer.push("<!--[-1-->");
+		$$renderer.push(`<!--]--></div>`);
+		pop_element();
+		$$renderer.push(` <div>`);
+		push_element($$renderer, "div", 62, 4);
+		$$renderer.push(`<div class="flex items-center justify-between mb-1">`);
+		push_element($$renderer, "div", 63, 6);
+		$$renderer.push(`<label for="password" class="block text-xs font-semibold text-foreground">`);
+		push_element($$renderer, "label", 64, 8);
+		$$renderer.push(`Password</label>`);
+		pop_element();
+		$$renderer.push(` <a href="/forgot-password" class="text-xs text-primary hover:underline font-medium">`);
+		push_element($$renderer, "a", 65, 8);
+		$$renderer.push(`Forgot password?</a>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(` <div class="relative">`);
+		push_element($$renderer, "div", 72, 6);
+		Lock($$renderer, { class: "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" });
+		$$renderer.push(`<!----> <input id="password" type="password" name="password" required="" autocomplete="current-password" placeholder="••••••••••••" class="w-full rounded-lg border bg-background py-2 pl-9 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary"/>`);
+		push_element($$renderer, "input", 74, 8);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(` `);
+		if (form?.fieldErrors?.password) {
+			$$renderer.push(`<!--[0--><p class="mt-1 text-xs text-destructive">`);
+			push_element($$renderer, "p", 85, 8);
+			$$renderer.push(`${escape_html(form.fieldErrors.password[0])}</p>`);
+			pop_element();
+		} else $$renderer.push("<!--[-1-->");
+		$$renderer.push(`<!--]--></div>`);
+		pop_element();
+		$$renderer.push(` <button type="submit"${attr("disabled", isPending, true)} class="w-full inline-flex items-center justify-center rounded-lg bg-primary py-2.5 px-4 text-sm font-semibold text-primary-foreground shadow transition hover:bg-primary-600 disabled:opacity-50">`);
+		push_element($$renderer, "button", 89, 4);
+		$$renderer.push(`<!--[-1--><span>`);
+		push_element($$renderer, "span", 98, 8);
+		$$renderer.push(`Sign In</span>`);
+		pop_element();
+		$$renderer.push(`<!--]--></button>`);
+		pop_element();
+		$$renderer.push(`</form>`);
+		pop_element();
+		$$renderer.push(` <div class="mt-6 pt-4 border-t text-center text-xs text-muted-foreground">`);
+		push_element($$renderer, "div", 103, 2);
+		$$renderer.push(`<span>`);
+		push_element($$renderer, "span", 104, 4);
+		$$renderer.push(`Don't have an account yet?</span>`);
+		pop_element();
+		$$renderer.push(` <a href="/register" class="font-semibold text-primary hover:underline">`);
+		push_element($$renderer, "a", 105, 4);
+		$$renderer.push(`Create an account</a>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+		$$renderer.push(`</div>`);
+		pop_element();
+	}, _page);
+}
+_page.render = function() {
+	throw new Error("Component.render(...) is no longer valid in Svelte 5. See https://svelte.dev/docs/svelte/v5-migration-guide#Components-are-no-longer-classes for more information");
+};
+export { _page as default };
+
+//# sourceMappingURL=_page.svelte.js.map
