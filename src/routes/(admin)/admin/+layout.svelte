@@ -2,7 +2,7 @@
   import type { Snippet } from "svelte";
   import type { LayoutData } from "./$types";
   import { page } from "$app/state";
-  import { Sliders, ShieldAlert, Store, Upload, ArrowLeft, LogOut } from "lucide-svelte";
+  import { Sliders, ShieldAlert, Store, Upload, ArrowLeft, LogOut, Image as ImageIcon } from "lucide-svelte";
 
   let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
@@ -10,6 +10,7 @@
     { label: "Dashboard & Health", href: "/admin", icon: Sliders },
     { label: "Moderation Queue", href: "/admin/moderation", icon: ShieldAlert },
     { label: "Listings Directory", href: "/admin/listings", icon: Store },
+    { label: "Media Console", href: "/admin/media", icon: ImageIcon },
     { label: "CSV Import / Export", href: "/admin/imports", icon: Upload },
   ];
 </script>

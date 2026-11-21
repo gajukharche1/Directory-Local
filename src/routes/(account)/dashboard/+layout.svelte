@@ -10,6 +10,7 @@
     CreditCard,
     LogOut,
     ArrowLeft,
+    Image as ImageIcon,
   } from "lucide-svelte";
 
   let { data, children }: { data: LayoutData; children: Snippet } = $props();
@@ -17,6 +18,7 @@
   const navItems = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { label: "My Listings", href: "/dashboard/listings", icon: Store },
+    { label: "Media Manager", href: "/dashboard/media", icon: ImageIcon },
     { label: "Leads & Enquiries", href: "/dashboard/enquiries", icon: Inbox },
     { label: "Customer Reviews", href: "/dashboard/reviews", icon: Star },
     { label: "Plan & Billing", href: "/dashboard/billing", icon: CreditCard },
