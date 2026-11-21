@@ -1334,8 +1334,8 @@
   </div>
 
   <!-- Sticky Bottom Save Dock -->
-  <div class="fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-md border-t border-border p-3.5 shadow-2xl">
-    <div class="max-w-6xl mx-auto w-full flex items-center justify-between px-4">
+  <div class="fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-md border-t border-border py-2 px-4 shadow-xl">
+    <div class="max-w-6xl mx-auto w-full flex items-center justify-between">
       <div class="text-xs text-muted-foreground flex items-center gap-2">
         <span>Editing</span>
         <strong class="text-foreground">{listing.title}</strong>
@@ -1343,10 +1343,10 @@
         <span class="text-emerald-600 font-semibold hidden sm:inline">Ready to save</span>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
         <a
           href="/admin/listings"
-          class="px-4 py-2 rounded-xl border border-border text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
+          class="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
         >
           Cancel
         </a>
@@ -1355,10 +1355,10 @@
           type="submit"
           form="adminListingEditForm"
           disabled={isSaving}
-          class="inline-flex items-center gap-1.5 px-6 py-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-md cursor-pointer disabled:opacity-50"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-all shadow-xs cursor-pointer disabled:opacity-50"
         >
-          <Save class="h-4 w-4" />
-          <span>{isSaving ? "Saving Changes..." : "Save & Update Listing"}</span>
+          <Save class="h-3.5 w-3.5" />
+          <span>{isSaving ? "Saving..." : "Save & Update"}</span>
         </button>
       </div>
     </div>
