@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import type { LayoutData } from "./$types";
-  import { page } from "$app/state";
+  import { page, navigating } from "$app/state";
   import {
     Sliders,
     ShieldAlert,
@@ -20,7 +20,8 @@
     BarChart3,
     Settings,
     Layers,
-    ListOrdered
+    ListOrdered,
+    Loader2
   } from "lucide-svelte";
 
   let { data, children }: { data: LayoutData; children: Snippet } = $props();
@@ -63,7 +64,18 @@
   function isGroupActive(prefix: string) {
     return page.url.pathname.startsWith(prefix);
   }
+
+  function isNavigatingTo(href: string) {
+    return navigating.current?.to?.url.pathname === href;
+  }
 </script>
+
+<!-- Top Indeterminate Progress Rail -->
+{#if navigating.current}
+  <div class="fixed top-0 left-0 right-0 h-1 z-50 overflow-hidden bg-blue-100 shadow-xs">
+    <div class="h-full bg-blue-600 animate-[shimmer-wave_1.2s_infinite_ease-in-out] w-full"></div>
+  </div>
+{/if}
 
 <div class="min-h-screen flex flex-col md:flex-row bg-[#F6F7FC] text-slate-800">
   <!-- Modern Admin Sidebar (Inspired by Clean Pastel Dashboard & Reference UI) -->
@@ -97,7 +109,11 @@
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <Sliders class="h-4 w-4 shrink-0 {isActive('/admin', true) ? 'text-white' : 'text-slate-400'}" />
+              {#if isNavigatingTo('/admin')}
+                <Loader2 class="h-4 w-4 shrink-0 animate-spin text-blue-500" />
+              {:else}
+                <Sliders class="h-4 w-4 shrink-0 {isActive('/admin', true) ? 'text-white' : 'text-slate-400'}" />
+              {/if}
               <span>Dashboard</span>
             </div>
             {#if isActive('/admin', true)}
@@ -113,7 +129,11 @@
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <ShieldAlert class="h-4 w-4 shrink-0 {isActive('/admin/moderation') ? 'text-white' : 'text-slate-400'}" />
+              {#if isNavigatingTo('/admin/moderation')}
+                <Loader2 class="h-4 w-4 shrink-0 animate-spin text-blue-500" />
+              {:else}
+                <ShieldAlert class="h-4 w-4 shrink-0 {isActive('/admin/moderation') ? 'text-white' : 'text-slate-400'}" />
+              {/if}
               <span>Moderation Queue</span>
             </div>
             {#if isActive('/admin/moderation')}
@@ -143,22 +163,32 @@
                 <div class="ml-4 pl-3.5 border-l-2 border-slate-200/80 space-y-1 py-0.5">
                   <a
                     href="/admin/listings"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/listings', true)
+                    class="flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/listings', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <Layers class="h-3.5 w-3.5 shrink-0 {isActive('/admin/listings', true) ? 'text-white' : 'text-slate-400'}" />
-                    <span>All Listing</span>
+                    <div class="flex items-center gap-2.5">
+                      <Layers class="h-3.5 w-3.5 shrink-0 {isActive('/admin/listings', true) ? 'text-white' : 'text-slate-400'}" />
+                      <span>All Listing</span>
+                    </div>
+                    {#if isNavigatingTo('/admin/listings')}
+                      <Loader2 class="h-3 w-3 animate-spin text-blue-500" />
+                    {/if}
                   </a>
 
                   <a
                     href="/admin/listings/new"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/listings/new', true)
+                    class="flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/listings/new', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <PlusCircle class="h-3.5 w-3.5 shrink-0 {isActive('/admin/listings/new', true) ? 'text-white' : 'text-slate-400'}" />
-                    <span>Add New Listing</span>
+                    <div class="flex items-center gap-2.5">
+                      <PlusCircle class="h-3.5 w-3.5 shrink-0 {isActive('/admin/listings/new', true) ? 'text-white' : 'text-slate-400'}" />
+                      <span>Add New Listing</span>
+                    </div>
+                    {#if isNavigatingTo('/admin/listings/new')}
+                      <Loader2 class="h-3 w-3 animate-spin text-blue-500" />
+                    {/if}
                   </a>
                 </div>
               </div>
@@ -187,22 +217,32 @@
                 <div class="ml-4 pl-3.5 border-l-2 border-slate-200/80 space-y-1 py-0.5">
                   <a
                     href="/admin/categories"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/categories', true)
+                    class="flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/categories', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <ListOrdered class="h-3.5 w-3.5 shrink-0 {isActive('/admin/categories', true) ? 'text-white' : 'text-slate-400'}" />
-                    <span>All Categories</span>
+                    <div class="flex items-center gap-2.5">
+                      <ListOrdered class="h-3.5 w-3.5 shrink-0 {isActive('/admin/categories', true) ? 'text-white' : 'text-slate-400'}" />
+                      <span>All Categories</span>
+                    </div>
+                    {#if isNavigatingTo('/admin/categories')}
+                      <Loader2 class="h-3 w-3 animate-spin text-blue-500" />
+                    {/if}
                   </a>
 
                   <a
                     href="/admin/categories/new"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/categories/new', true)
+                    class="flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/categories/new', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <FolderPlus class="h-3.5 w-3.5 shrink-0 {isActive('/admin/categories/new', true) ? 'text-white' : 'text-slate-400'}" />
-                    <span>Add New Category</span>
+                    <div class="flex items-center gap-2.5">
+                      <FolderPlus class="h-3.5 w-3.5 shrink-0 {isActive('/admin/categories/new', true) ? 'text-white' : 'text-slate-400'}" />
+                      <span>Add New Category</span>
+                    </div>
+                    {#if isNavigatingTo('/admin/categories/new')}
+                      <Loader2 class="h-3 w-3 animate-spin text-blue-500" />
+                    {/if}
                   </a>
                 </div>
               </div>
@@ -231,22 +271,32 @@
                 <div class="ml-4 pl-3.5 border-l-2 border-slate-200/80 space-y-1 py-0.5">
                   <a
                     href="/admin/locations"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/locations', true)
+                    class="flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/locations', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <ListOrdered class="h-3.5 w-3.5 shrink-0 {isActive('/admin/locations', true) ? 'text-white' : 'text-slate-400'}" />
-                    <span>All Locations</span>
+                    <div class="flex items-center gap-2.5">
+                      <ListOrdered class="h-3.5 w-3.5 shrink-0 {isActive('/admin/locations', true) ? 'text-white' : 'text-slate-400'}" />
+                      <span>All Locations</span>
+                    </div>
+                    {#if isNavigatingTo('/admin/locations')}
+                      <Loader2 class="h-3 w-3 animate-spin text-blue-500" />
+                    {/if}
                   </a>
 
                   <a
                     href="/admin/locations/new"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/locations/new', true)
+                    class="flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/locations/new', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <MapPinPlus class="h-3.5 w-3.5 shrink-0 {isActive('/admin/locations/new', true) ? 'text-white' : 'text-slate-400'}" />
-                    <span>Add New Location</span>
+                    <div class="flex items-center gap-2.5">
+                      <MapPinPlus class="h-3.5 w-3.5 shrink-0 {isActive('/admin/locations/new', true) ? 'text-white' : 'text-slate-400'}" />
+                      <span>Add New Location</span>
+                    </div>
+                    {#if isNavigatingTo('/admin/locations/new')}
+                      <Loader2 class="h-3 w-3 animate-spin text-blue-500" />
+                    {/if}
                   </a>
                 </div>
               </div>
@@ -261,7 +311,11 @@
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <Upload class="h-4 w-4 shrink-0 {isActive('/admin/imports') ? 'text-white' : 'text-slate-400'}" />
+              {#if isNavigatingTo('/admin/imports')}
+                <Loader2 class="h-4 w-4 shrink-0 animate-spin text-blue-500" />
+              {:else}
+                <Upload class="h-4 w-4 shrink-0 {isActive('/admin/imports') ? 'text-white' : 'text-slate-400'}" />
+              {/if}
               <span>CSV Import / Export</span>
             </div>
             {#if isActive('/admin/imports')}
@@ -277,7 +331,11 @@
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <ImageIcon class="h-4 w-4 shrink-0 {isActive('/admin/media') ? 'text-white' : 'text-slate-400'}" />
+              {#if isNavigatingTo('/admin/media')}
+                <Loader2 class="h-4 w-4 shrink-0 animate-spin text-blue-500" />
+              {:else}
+                <ImageIcon class="h-4 w-4 shrink-0 {isActive('/admin/media') ? 'text-white' : 'text-slate-400'}" />
+              {/if}
               <span>Media Library</span>
             </div>
             {#if isActive('/admin/media')}
@@ -293,7 +351,11 @@
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <BarChart3 class="h-4 w-4 shrink-0 {isActive('/admin/analytics') ? 'text-white' : 'text-slate-400'}" />
+              {#if isNavigatingTo('/admin/analytics')}
+                <Loader2 class="h-4 w-4 shrink-0 animate-spin text-blue-500" />
+              {:else}
+                <BarChart3 class="h-4 w-4 shrink-0 {isActive('/admin/analytics') ? 'text-white' : 'text-slate-400'}" />
+              {/if}
               <span>Directory Analytics</span>
             </div>
             {#if isActive('/admin/analytics')}
@@ -309,7 +371,11 @@
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <Settings class="h-4 w-4 shrink-0 {isActive('/admin/settings') ? 'text-white' : 'text-slate-400'}" />
+              {#if isNavigatingTo('/admin/settings')}
+                <Loader2 class="h-4 w-4 shrink-0 animate-spin text-blue-500" />
+              {:else}
+                <Settings class="h-4 w-4 shrink-0 {isActive('/admin/settings') ? 'text-white' : 'text-slate-400'}" />
+              {/if}
               <span>Site & Settings</span>
             </div>
             {#if isActive('/admin/settings')}
