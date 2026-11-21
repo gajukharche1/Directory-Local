@@ -45,7 +45,7 @@ export class ListingService {
         },
         plan: true,
         media: {
-          where: { scanStatus: "clean" },
+          where: { isQuarantined: false, deletedAt: null },
           orderBy: { createdAt: "asc" },
         },
         reviews: {
