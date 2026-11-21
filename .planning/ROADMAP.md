@@ -31,7 +31,7 @@
 **Plans:** 1/1 plans planned  
 
 Plans:
-- [ ] 03-enterprise-media-file-manager/PLAN.md
+- [x] 03-enterprise-media-file-manager/PLAN.md
 
 ---
 
