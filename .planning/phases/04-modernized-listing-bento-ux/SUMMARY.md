@@ -11,7 +11,7 @@ commits:
   - f39159e: "feat(listing): add categorized services rate card and customer sentiment chips"
   - 156d72f: "feat(listing): add sticky desktop lead card and review rating histogram"
   - 62ba7a3: "test(listing): integrate Schema.org JSON-LD, verify WCAG AA and typecheck"
-  - pending: "feat(admin-listing): add full admin listing editor with SEO keywords, OpenGraph banner and social live preview"
+  - 108b697: "feat(admin-listing): add full admin listing editor with SEO keywords, OpenGraph banner and social live preview"
 provides:
   - Responsive Bento 5-tile photo mosaic with CLS=0 pre-allocated aspect ratios and swipeable mobile carousel
   - Full-screen ListingLightboxModal with keyboard navigation (Esc, Arrow Left/Right) and thumbnail jump strip
