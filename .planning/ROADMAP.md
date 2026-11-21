@@ -71,7 +71,7 @@ Plans:
 **Plans:** 1/1 plans planned  
 
 Plans:
-- [ ] 05.1-admin-sidebar-accordion-navigation/PLAN.md
+- [x] 05.1-admin-sidebar-accordion-navigation/PLAN.md
 
 ---
 

@@ -127,6 +127,112 @@
     </div>
   </div>
 
+  <!-- Operations Launchpad (Quick Actions from Reference UI) -->
+  <div class="space-y-4">
+    <div>
+      <h2 class="text-base font-black tracking-tight text-slate-900">
+        Operations Launchpad
+      </h2>
+      <p class="text-xs text-slate-500 mt-0.5 font-medium">
+        Frequently used administration shortcuts and catalog management modules
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Card 1: Add New Listing -->
+      <a
+        href="/admin/listings/new"
+        class="group p-5 rounded-3xl bg-white border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between space-y-4"
+      >
+        <div class="space-y-3">
+          <div class="h-10 w-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <Store class="h-5 w-5" />
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
+              Add New Listing
+            </h3>
+            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+              Register a merchant or local business with categories and media
+            </p>
+          </div>
+        </div>
+        <span class="text-[11px] font-bold text-emerald-700 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+          Manage <ArrowRight class="h-3 w-3" />
+        </span>
+      </a>
+
+      <!-- Card 2: Manage Categories -->
+      <a
+        href="/admin/categories"
+        class="group p-5 rounded-3xl bg-white border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between space-y-4"
+      >
+        <div class="space-y-3">
+          <div class="h-10 w-10 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <Sparkles class="h-5 w-5" />
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+              Manage Categories
+            </h3>
+            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+              Organize taxonomy, SEO keywords, and category card badges
+            </p>
+          </div>
+        </div>
+        <span class="text-[11px] font-bold text-blue-700 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+          Manage <ArrowRight class="h-3 w-3" />
+        </span>
+      </a>
+
+      <!-- Card 3: Location Hubs -->
+      <a
+        href="/admin/locations"
+        class="group p-5 rounded-3xl bg-white border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between space-y-4"
+      >
+        <div class="space-y-3">
+          <div class="h-10 w-10 rounded-2xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <Clock class="h-5 w-5" />
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
+              Location Hubs
+            </h3>
+            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+              Configure neighborhoods, commercial centers, and landmarks
+            </p>
+          </div>
+        </div>
+        <span class="text-[11px] font-bold text-purple-700 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+          Manage <ArrowRight class="h-3 w-3" />
+        </span>
+      </a>
+
+      <!-- Card 4: Site Settings -->
+      <a
+        href="/admin/settings"
+        class="group p-5 rounded-3xl bg-white border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between space-y-4"
+      >
+        <div class="space-y-3">
+          <div class="h-10 w-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <Users class="h-5 w-5" />
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
+              Site Settings
+            </h3>
+            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+              Customize directory name, badge initials, and operational controls
+            </p>
+          </div>
+        </div>
+        <span class="text-[11px] font-bold text-amber-700 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+          Manage <ArrowRight class="h-3 w-3" />
+        </span>
+      </a>
+    </div>
+  </div>
+
   <!-- Moderation Alert Card -->
   {#if hasPendingItems}
     <div class="rounded-3xl border border-amber-200/80 bg-white p-6 shadow-[0_4px_20px_-4px_rgba(245,158,11,0.06)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
