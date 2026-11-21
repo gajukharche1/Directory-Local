@@ -13,6 +13,7 @@
 | **Phase 03** | Enterprise Media File Manager | `feature/phase-03-media-file-manager` | `feat(media): ...` |
 | **Phase 04** | Modernized Listing Detail & Bento UX | `feature/phase-04-listing-bento-ux` | `feat(listing): ...` |
 | **Phase 05** | Bulk Select & Multi-Action Utility | `feature/phase-05-bulk-select-utility` | `feat(admin-ui): ...` |
+| **Phase 05.1** | Admin Sidebar Accordion Navigation & Catalog Routes | `feature/phase-05.1-admin-sidebar-accordion-navigation` | `feat(admin-nav): ...` |
 | **Phase 06** | Shimmer Loading States & Listings Redesign | `feature/phase-06-shimmer-loading-states` | `feat(ui): ...` |
 | **Phase 07** | Multi-Entity CSV Import Hub & Opening Hours | `feature/phase-07-csv-import-opening-hours` | `feat(admin-import): ...` |
 | **Phase 08** | User Management, Privileges & Collapsible Nav | `feature/phase-08-user-management-nav` | `feat(admin-users): ...` |
@@ -58,6 +59,19 @@ Plans:
 
 Plans:
 - [x] 05-bulk-select-multi-action-utility/PLAN.md
+
+---
+
+### Phase 5.1: Admin Sidebar Accordion Navigation & Catalog Routes
+
+**Goal:** Transform the Admin Console navigation into a multi-group collapsible accordion sidebar matching the reference UI, featuring interactive accordion sections for Listing, Categories, and Locations (with All and Add New sub-items), top operational status header bar, and route scaffolding.  
+**Git Branch:** `feature/phase-05.1-admin-sidebar-accordion-navigation`  
+**Requirements**: Svelte 5 runes collapsible accordion navigation, route auto-expansion, operational status header bar, admin profile pill, and scaffolding for categories, locations, and new listing endpoints.  
+**Depends on:** Phase 5  
+**Plans:** 1/1 plans planned  
+
+Plans:
+- [ ] 05.1-admin-sidebar-accordion-navigation/PLAN.md
 
 ---
 
