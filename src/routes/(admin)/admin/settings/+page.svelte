@@ -31,10 +31,15 @@
     SlidersHorizontal,
     Image as ImageIcon,
     Loader2,
+    UploadCloud,
+    FolderOpen,
+    Upload,
   } from "lucide-svelte";
   import AddUserModal from "$lib/components/admin/AddUserModal.svelte";
   import AdminResetPasswordModal from "$lib/components/admin/AdminResetPasswordModal.svelte";
   import ToggleSwitch from "$lib/components/ui/ToggleSwitch.svelte";
+  import MediaPickerModal from "$lib/components/media/MediaPickerModal.svelte";
+  import { uploadMediaFile } from "$lib/utils/media-uploader";
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -57,6 +62,58 @@
   let autoApproveClaims = $state(data.siteSettings.autoApproveClaims);
   let requireReviewOtp = $state(data.siteSettings.requireReviewOtp);
   let isSavingSettings = $state(false);
+
+  // Media Picker and Upload State for Logo & Favicon
+  let isMediaPickerOpen = $state(false);
+  let mediaPickerTarget = $state<"logo" | "favicon" | null>(null);
+  let isUploadingDirect = $state(false);
+  let uploadTarget = $state<"logo" | "favicon" | null>(null);
+
+  let logoFileInput = $state<HTMLInputElement | null>(null);
+  let faviconFileInput = $state<HTMLInputElement | null>(null);
+
+  function openMediaPicker(target: "logo" | "favicon") {
+    mediaPickerTarget = target;
+    isMediaPickerOpen = true;
+  }
+
+  function handleMediaSelected(selected: any[]) {
+    if (selected && selected.length > 0 && selected[0]?.url) {
+      if (mediaPickerTarget === "logo") {
+        logoUrl = selected[0].url;
+      } else if (mediaPickerTarget === "favicon") {
+        faviconUrl = selected[0].url;
+      }
+    }
+    isMediaPickerOpen = false;
+    mediaPickerTarget = null;
+  }
+
+  async function handleDirectFileUpload(e: Event, target: "logo" | "favicon") {
+    const input = e.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    isUploadingDirect = true;
+    uploadTarget = target;
+    try {
+      const result = await uploadMediaFile(file, {
+        altText: target === "logo" ? `${siteName} Header Logo` : `${siteName} Favicon`,
+      });
+      if (result && result.url) {
+        if (target === "logo") {
+          logoUrl = result.url;
+        } else {
+          faviconUrl = result.url;
+        }
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to upload file. Please try again.");
+    } finally {
+      isUploadingDirect = false;
+      uploadTarget = null;
+      input.value = "";
+    }
+  }
 
   // Search & Filters for User Directory
   let searchQuery = $state("");
@@ -646,37 +703,255 @@
 
       <!-- Section 3: Brand Assets & Media URLs -->
       <div class="space-y-4 pt-2">
-        <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
-          <ImageIcon class="h-4 w-4 text-slate-700" />
-          <div>
-            <h3 class="text-sm font-extrabold text-slate-900">Brand Logo & Favicon Assets</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Public logos displayed on headers and browser tabs.</p>
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <ImageIcon class="h-4 w-4 text-slate-700" />
+            <div>
+              <h3 class="text-sm font-extrabold text-slate-900">Brand Logo & Favicon Assets</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Select from your media library or upload directly for public headers and browser tabs.</p>
+            </div>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="space-y-1.5">
-            <label for="logoUrl" class="text-xs font-bold text-slate-700">Header Logo URL (Optional)</label>
-            <input
-              id="logoUrl"
-              name="logoUrl"
-              type="url"
-              bind:value={logoUrl}
-              placeholder="https://.../logo.png"
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-mono"
-            />
+        <!-- Hidden File Inputs for Direct Computer Upload -->
+        <input
+          type="file"
+          bind:this={logoFileInput}
+          accept="image/*"
+          class="hidden"
+          onchange={(e) => handleDirectFileUpload(e, "logo")}
+        />
+        <input
+          type="file"
+          bind:this={faviconFileInput}
+          accept="image/*,.ico"
+          class="hidden"
+          onchange={(e) => handleDirectFileUpload(e, "favicon")}
+        />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Header Logo Asset Card -->
+          <div class="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3.5">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold text-slate-800">Header Brand Logo</span>
+                <p class="text-[11px] text-slate-500">Rendered on navigation bar and headers (PNG, SVG, WebP).</p>
+              </div>
+              {#if logoUrl}
+                <button
+                  type="button"
+                  onclick={() => (logoUrl = "")}
+                  class="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Trash2 class="h-3 w-3" />
+                  <span>Remove</span>
+                </button>
+              {/if}
+            </div>
+
+            <!-- Preview or Empty State Box -->
+            {#if logoUrl}
+              <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+                <div class="h-16 w-32 flex items-center justify-center p-2 rounded-lg bg-slate-50 border border-slate-100 shrink-0 overflow-hidden">
+                  <img
+                    src={logoUrl}
+                    alt="Header Logo Preview"
+                    class="max-h-full max-w-full object-contain"
+                    onerror={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "https://placehold.co/120x40?text=Invalid+Image";
+                    }}
+                  />
+                </div>
+                <div class="flex-1 min-w-0 space-y-2">
+                  <p class="text-xs font-medium text-slate-700 truncate" title={logoUrl}>
+                    {logoUrl}
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onclick={() => openMediaPicker("logo")}
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold transition cursor-pointer"
+                    >
+                      <FolderOpen class="h-3.5 w-3.5 text-slate-600" />
+                      <span>Choose from Media</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isUploadingDirect && uploadTarget === "logo"}
+                      onclick={() => logoFileInput?.click()}
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
+                    >
+                      {#if isUploadingDirect && uploadTarget === "logo"}
+                        <Loader2 class="h-3.5 w-3.5 animate-spin text-blue-600" />
+                        <span>Uploading...</span>
+                      {:else}
+                        <Upload class="h-3.5 w-3.5 text-slate-600" />
+                        <span>Upload File</span>
+                      {/if}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            {:else}
+              <div class="p-5 border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl bg-white flex flex-col items-center justify-center text-center space-y-3 transition">
+                <div class="h-10 w-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <ImageIcon class="h-5 w-5" />
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-700">No header logo selected</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Select an asset from your Media Hub or upload from device</p>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onclick={() => openMediaPicker("logo")}
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                  >
+                    <FolderOpen class="h-3.5 w-3.5" />
+                    <span>Choose from Media Hub</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isUploadingDirect && uploadTarget === "logo"}
+                    onclick={() => logoFileInput?.click()}
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                  >
+                    {#if isUploadingDirect && uploadTarget === "logo"}
+                      <Loader2 class="h-3.5 w-3.5 animate-spin text-blue-600" />
+                      <span>Uploading...</span>
+                    {:else}
+                      <UploadCloud class="h-3.5 w-3.5 text-slate-500" />
+                      <span>Upload New</span>
+                    {/if}
+                  </button>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Direct URL Input field for custom/remote CDN URLs -->
+            <div class="space-y-1">
+              <label for="logoUrl" class="text-[11px] font-semibold text-slate-500">Direct Logo URL</label>
+              <input
+                id="logoUrl"
+                name="logoUrl"
+                type="url"
+                bind:value={logoUrl}
+                placeholder="https://.../logo.png"
+                class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-mono"
+              />
+            </div>
           </div>
 
-          <div class="space-y-1.5">
-            <label for="faviconUrl" class="text-xs font-bold text-slate-700">Browser Favicon URL (Optional)</label>
-            <input
-              id="faviconUrl"
-              name="faviconUrl"
-              type="url"
-              bind:value={faviconUrl}
-              placeholder="https://.../favicon.ico"
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-mono"
-            />
+          <!-- Browser Favicon Asset Card -->
+          <div class="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3.5">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold text-slate-800">Browser Favicon</span>
+                <p class="text-[11px] text-slate-500">Displayed in browser tabs and bookmarks (ICO, PNG, SVG).</p>
+              </div>
+              {#if faviconUrl}
+                <button
+                  type="button"
+                  onclick={() => (faviconUrl = "")}
+                  class="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Trash2 class="h-3 w-3" />
+                  <span>Remove</span>
+                </button>
+              {/if}
+            </div>
+
+            <!-- Preview or Empty State Box -->
+            {#if faviconUrl}
+              <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+                <div class="h-16 w-16 flex items-center justify-center p-2 rounded-lg bg-slate-50 border border-slate-100 shrink-0 overflow-hidden">
+                  <img
+                    src={faviconUrl}
+                    alt="Favicon Preview"
+                    class="h-8 w-8 object-contain"
+                    onerror={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "https://placehold.co/32x32?text=ICO";
+                    }}
+                  />
+                </div>
+                <div class="flex-1 min-w-0 space-y-2">
+                  <p class="text-xs font-medium text-slate-700 truncate" title={faviconUrl}>
+                    {faviconUrl}
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onclick={() => openMediaPicker("favicon")}
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold transition cursor-pointer"
+                    >
+                      <FolderOpen class="h-3.5 w-3.5 text-slate-600" />
+                      <span>Choose from Media</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isUploadingDirect && uploadTarget === "favicon"}
+                      onclick={() => faviconFileInput?.click()}
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
+                    >
+                      {#if isUploadingDirect && uploadTarget === "favicon"}
+                        <Loader2 class="h-3.5 w-3.5 animate-spin text-purple-600" />
+                        <span>Uploading...</span>
+                      {:else}
+                        <Upload class="h-3.5 w-3.5 text-slate-600" />
+                        <span>Upload File</span>
+                      {/if}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            {:else}
+              <div class="p-5 border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl bg-white flex flex-col items-center justify-center text-center space-y-3 transition">
+                <div class="h-10 w-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <Globe class="h-5 w-5" />
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-slate-700">No custom favicon selected</p>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Select an asset from your Media Hub or upload an .ico / .png file</p>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onclick={() => openMediaPicker("favicon")}
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                  >
+                    <FolderOpen class="h-3.5 w-3.5" />
+                    <span>Choose from Media Hub</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isUploadingDirect && uploadTarget === "favicon"}
+                    onclick={() => faviconFileInput?.click()}
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                  >
+                    {#if isUploadingDirect && uploadTarget === "favicon"}
+                      <Loader2 class="h-3.5 w-3.5 animate-spin text-purple-600" />
+                      <span>Uploading...</span>
+                    {:else}
+                      <UploadCloud class="h-3.5 w-3.5 text-slate-500" />
+                      <span>Upload New</span>
+                    {/if}
+                  </button>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Direct URL Input field for custom/remote CDN URLs -->
+            <div class="space-y-1">
+              <label for="faviconUrl" class="text-[11px] font-semibold text-slate-500">Direct Favicon URL</label>
+              <input
+                id="faviconUrl"
+                name="faviconUrl"
+                type="url"
+                bind:value={faviconUrl}
+                placeholder="https://.../favicon.ico"
+                class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-mono"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -757,3 +1032,15 @@
 
 <!-- Admin Reset Password Modal -->
 <AdminResetPasswordModal bind:user={targetResetUser} />
+
+<!-- Phase 03 Media Hub Picker Modal for Logo / Favicon -->
+<MediaPickerModal
+  isOpen={isMediaPickerOpen}
+  maxSelect={1}
+  title={mediaPickerTarget === "logo" ? "Select Brand Header Logo" : "Select Browser Favicon"}
+  onselect={handleMediaSelected}
+  onclose={() => {
+    isMediaPickerOpen = false;
+    mediaPickerTarget = null;
+  }}
+/>
