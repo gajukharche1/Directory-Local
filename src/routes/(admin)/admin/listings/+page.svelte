@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
+  import { invalidateAll } from "$app/navigation";
   import type { PageData } from "./$types";
   import {
     Search,
@@ -13,10 +14,23 @@
     MapPin,
     ArrowUpRight,
     Sparkles,
-    ShieldAlert
+    ShieldAlert,
+    Trash2,
+    Check
   } from "lucide-svelte";
+  import { createBulkSelection } from "$lib/components/ui/bulk-select/bulk-select.svelte";
+  import BulkSelectCheckbox from "$lib/components/ui/bulk-select/BulkSelectCheckbox.svelte";
+  import BulkSelectToolbar from "$lib/components/ui/bulk-select/BulkSelectToolbar.svelte";
+  import BulkConfirmModal from "$lib/components/ui/bulk-select/BulkConfirmModal.svelte";
 
   let { data }: { data: PageData } = $props();
+
+  const selection = createBulkSelection();
+  let visibleIds = $derived(data.listings.map((l) => l.id));
+
+  let showDeleteModal = $state(false);
+  let isProcessing = $state(false);
+  let feedbackMessage = $state("");
 
   let statusTabs = $derived([
     { label: "All", value: "", count: data.totalCount },
@@ -26,6 +40,29 @@
     { label: "Rejected", value: "rejected" },
     { label: "Archived", value: "archived" },
   ]);
+
+  async function handleBulkDelete() {
+    isProcessing = true;
+    const formData = new FormData();
+    formData.set("ids", JSON.stringify(selection.selectedArray));
+
+    try {
+      const response = await fetch("?/bulkDelete", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        showDeleteModal = false;
+        selection.deselectAll();
+        feedbackMessage = "Selected listings deleted successfully";
+        await invalidateAll();
+        setTimeout(() => (feedbackMessage = ""), 4000);
+      }
+    } finally {
+      isProcessing = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -33,6 +70,23 @@
 </svelte:head>
 
 <div class="space-y-7">
+  <!-- Feedback Banner -->
+  {#if feedbackMessage}
+    <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between shadow-xs animate-in fade-in">
+      <div class="flex items-center gap-2">
+        <Check class="h-4 w-4 text-emerald-600" />
+        <span>{feedbackMessage}</span>
+      </div>
+      <button
+        type="button"
+        class="text-xs text-emerald-600 hover:text-emerald-900 font-bold"
+        onclick={() => (feedbackMessage = "")}
+      >
+        Dismiss
+      </button>
+    </div>
+  {/if}
+
   <!-- Top Welcome & Search Header -->
   <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
@@ -179,7 +233,15 @@
         <table class="w-full text-left text-xs">
           <thead class="border-b border-slate-100 bg-slate-50/50 font-bold text-slate-400 uppercase tracking-wider text-[10px]">
             <tr>
-              <th class="py-3.5 px-6">Business Name</th>
+              <th class="py-3.5 pl-6 pr-2 w-10">
+                <BulkSelectCheckbox
+                  checked={selection.isAllSelected(visibleIds)}
+                  indeterminate={selection.isIndeterminate(visibleIds)}
+                  ariaLabel="Select all visible listings"
+                  onchange={() => selection.toggleAll(visibleIds)}
+                />
+              </th>
+              <th class="py-3.5 px-4">Business Name</th>
               <th class="py-3.5 px-4">Primary Category</th>
               <th class="py-3.5 px-4">Locality</th>
               <th class="py-3.5 px-4">Rating</th>
@@ -188,10 +250,21 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            {#each data.listings as listing (listing.id)}
-              <tr class="hover:bg-slate-50/70 transition-colors group">
+            {#each data.listings as listing, idx (listing.id)}
+              <tr class="transition-colors group {selection.isSelected(listing.id)
+                ? 'bg-indigo-50/60 dark:bg-indigo-950/20'
+                : 'hover:bg-slate-50/70'}">
+                <!-- Select Checkbox -->
+                <td class="py-4 pl-6 pr-2 w-10">
+                  <BulkSelectCheckbox
+                    checked={selection.isSelected(listing.id)}
+                    ariaLabel={`Select ${listing.title}`}
+                    onchange={(e) => selection.toggle(listing.id, idx, e.shiftKey, visibleIds)}
+                  />
+                </td>
+
                 <!-- Business Name -->
-                <td class="py-4 px-6">
+                <td class="py-4 px-4">
                   <div class="flex items-center gap-3">
                     <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-slate-100 to-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 border border-slate-200/60 shadow-xs">
                       {listing.title?.charAt(0)?.toUpperCase() || "B"}
@@ -291,4 +364,68 @@
       </div>
     </div>
   {/if}
+
+  <!-- Floating Bulk Actions Toolbar -->
+  <BulkSelectToolbar
+    count={selection.count}
+    entityName="listings"
+    ondeselect={() => selection.deselectAll()}
+  >
+    <!-- Bulk Status Dropdown -->
+    <form
+      method="POST"
+      action="?/bulkUpdateStatus"
+      use:enhance={() => {
+        isProcessing = true;
+        return async ({ result, update }) => {
+          isProcessing = false;
+          await update();
+          if (result.type === "success") {
+            selection.deselectAll();
+            feedbackMessage = "Listings updated successfully";
+            setTimeout(() => (feedbackMessage = ""), 4000);
+          }
+        };
+      }}
+      class="flex items-center gap-1.5"
+    >
+      <input type="hidden" name="ids" value={JSON.stringify(selection.selectedArray)} />
+      <select
+        name="status"
+        disabled={isProcessing}
+        onchange={(e) => (e.currentTarget.form as HTMLFormElement)?.requestSubmit()}
+        class="bg-slate-900 border border-slate-700 text-white text-xs font-semibold rounded-xl py-1.5 px-3 outline-none cursor-pointer hover:border-slate-500 transition-colors"
+      >
+        <option value="" disabled selected>Update Status...</option>
+        <option value="published">Mark as Published</option>
+        <option value="pending_review">Mark as Pending</option>
+        <option value="draft">Move to Draft</option>
+        <option value="rejected">Mark as Rejected</option>
+        <option value="archived">Archive Selected</option>
+      </select>
+    </form>
+
+    <!-- Bulk Delete Trigger Button -->
+    <button
+      type="button"
+      class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+      disabled={isProcessing}
+      onclick={() => (showDeleteModal = true)}
+    >
+      <Trash2 class="h-3.5 w-3.5" />
+      <span>Delete</span>
+    </button>
+  </BulkSelectToolbar>
+
+  <!-- Delete Safety Confirmation Modal -->
+  <BulkConfirmModal
+    isOpen={showDeleteModal}
+    title={`Delete ${selection.count} Selected Listing${selection.count > 1 ? "s" : ""}?`}
+    message="This will permanently delete the selected listings, including all associated photos, reviews, enquiries, and categories. This action cannot be reversed."
+    confirmLabel="Delete Forever"
+    confirmVariant="destructive"
+    {isProcessing}
+    oncancel={() => (showDeleteModal = false)}
+    onconfirm={handleBulkDelete}
+  />
 </div>
