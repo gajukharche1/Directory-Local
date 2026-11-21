@@ -91,4 +91,85 @@ export const actions: Actions = {
       });
     }
   },
+
+  bulkUpdateStatus: async ({ request }) => {
+    const formData = await request.formData();
+    const rawIds = formData.get("ids") as string;
+    const status = formData.get("status") as ListingStatus;
+
+    let ids: string[] = [];
+    try {
+      if (rawIds) {
+        ids = JSON.parse(rawIds);
+      } else {
+        ids = formData.getAll("ids") as string[];
+      }
+    } catch {
+      ids = formData.getAll("ids") as string[];
+    }
+
+    if (!Array.isArray(ids) || ids.length === 0 || !status) {
+      return fail(400, { error: "Valid listing IDs and target status are required" });
+    }
+
+    if (!Object.values(ListingStatus).includes(status)) {
+      return fail(400, { error: "Invalid status value provided" });
+    }
+
+    try {
+      const result = await db.listing.updateMany({
+        where: { id: { in: ids } },
+        data: {
+          status,
+          ...(status === ListingStatus.published && { publishedAt: new Date() }),
+        },
+      });
+
+      return {
+        success: true,
+        count: result.count,
+        message: `Successfully updated ${result.count} listing(s) to ${status.replace("_", " ")}`,
+      };
+    } catch (err) {
+      return fail(400, {
+        error: err instanceof Error ? err.message : "Failed to bulk update listing statuses",
+      });
+    }
+  },
+
+  bulkDelete: async ({ request }) => {
+    const formData = await request.formData();
+    const rawIds = formData.get("ids") as string;
+
+    let ids: string[] = [];
+    try {
+      if (rawIds) {
+        ids = JSON.parse(rawIds);
+      } else {
+        ids = formData.getAll("ids") as string[];
+      }
+    } catch {
+      ids = formData.getAll("ids") as string[];
+    }
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return fail(400, { error: "Listing IDs required for deletion" });
+    }
+
+    try {
+      const result = await db.listing.deleteMany({
+        where: { id: { in: ids } },
+      });
+
+      return {
+        success: true,
+        count: result.count,
+        message: `Successfully deleted ${result.count} listing(s)`,
+      };
+    } catch (err) {
+      return fail(400, {
+        error: err instanceof Error ? err.message : "Failed to bulk delete listings",
+      });
+    }
+  },
 };
