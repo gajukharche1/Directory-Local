@@ -200,10 +200,12 @@ export function validateCsvInput(
  * Downloadable sample CSV templates and demo data
  */
 export const SAMPLE_TEMPLATES: Record<ImportEntityType, string> = {
-  listings: `title,address,locality,phone,whatsapp,email,website,category,location,openingHours,priceRange,description
-Apex Dental & Implant Care,Shop 104 Kunal Icon Rd,Pimple Saudagar,+919822011223,+919822011223,contact@apexdental.com,https://apexdental.com,health-medical,pimple-saudagar,"Mon-Sat: 10am-8pm, Sun: Closed",2,Premier multi-specialty dental clinic offering painless laser implants.
-Blue Tokai Coffee Roasters,Ground Floor Platinum Towers,Shivar Chowk,+919876543210,+919876543210,hello@bluetokai.com,https://bluetokai.com,food-dining,shivar-chowk,08:00 - 23:00,3,Artisan specialty coffee roastery and fresh sourdough brunch kitchen.
-CrossFit Gym & Wellness,Plot 12 Shivar Garden Area,Kokane Chowk,+919811223344,+919811223344,coach@crossfit.in,,fitness-sports,kokane-chowk,24/7,3,Functional high-intensity training, certified personal coaches and cardio turf.`,
+  listings: `title,category,locality,address,openingHours,phone,email,website,priceRange,description
+Saudagar Fitness Hub,gyms-fitness,Pimple Saudagar,"Shop 14, Rainbow Plaza, Shivar Chowk Rd",Daily: 6 AM – 10 PM,9876543210,info@saudagarfit.com,https://saudagarfit.com,2,Premier fitness club and gym with certified trainers.
+Kunal Sweets & Snacks,restaurants-cafes,Kunal Icon Road,"Shop 3, Kunal Icon Rd, Opposite Roseland",Daily: 8 AM – 10 PM,9823001122,order@kunalsweets.com,https://kunalsweets.com,1,Traditional Indian sweets snacks and fresh daily savories.
+Dr. Smile Dental Care,healthcare,Kokane Chowk,"Office 201, Vision 9 Mall, Kokane Chowk",Mon-Sat: 9:30 AM – 8:30 PM,9922334455,contact@drsmilecare.com,https://drsmilecare.com,2,Multi-specialty advanced dental care orthodontics and implants.
+24x7 MedPlus Pharmacy,healthcare,Shivar Chowk,Near Shivar Chowk,Daily: 12 AM – 11:59 PM,9123456789,shivar@medplusindia.com,https://medplusindia.com,2,24 hours all-night retail pharmacy with emergency home delivery.
+Green Earth Plant Nursery,home-services,Govind Garden Area,"Govind Garden Area, Near Linear Garden",Mon-Sat: 9 AM – 7 PM,9123456788,hello@greenearthnursery.in,,1,Exotic indoor plants landscaping design and organic gardening essentials.`,
 
   categories: `name,slug,parent,description,featured,sortOrder
 Healthcare & Hospitals,healthcare,,Top-tier hospitals clinics diagnostic centers and healthcare labs,true,1

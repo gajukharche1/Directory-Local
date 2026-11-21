@@ -20,6 +20,7 @@
     ArrowRight,
     Check,
     Database,
+    Clock,
   } from "lucide-svelte";
   import {
     type ImportEntityType,
@@ -61,6 +62,11 @@
   const currentCsv = $derived(csvInputs[activeTab]);
   const estimatedRows = $derived(
     currentCsv.trim() ? Math.max(0, currentCsv.trim().split(/\r?\n/).filter((l) => l.trim()).length - 1) : 0
+  );
+
+  // Live parsed records for inline Verified Records Ready display
+  const liveParsedResult = $derived(
+    currentCsv.trim() ? validateCsvInput(currentCsv, activeTab) : null
   );
 
   function setTab(tab: ImportEntityType) {
@@ -158,7 +164,7 @@
   <title>Multi-Entity CSV Import Hub | Admin Console</title>
 </svelte:head>
 
-<div class="space-y-6 max-w-6xl">
+<div class="space-y-6 max-w-6xl pb-12">
   <!-- Page Header & Global Entity Stats -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
@@ -411,13 +417,13 @@
       <textarea
         id="csvEditor"
         bind:value={csvInputs[activeTab]}
-        rows="9"
+        rows="8"
         placeholder="Paste your CSV headers and records here..."
         class="w-full font-mono text-xs p-3.5 rounded-2xl border border-slate-200 bg-slate-50/30 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition shadow-inner leading-relaxed"
       ></textarea>
     </div>
 
-    <!-- Main Inspection & Execution Bar -->
+    <!-- Action Bar -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
       <div class="flex items-center gap-2 text-xs text-slate-500">
         <ShieldCheck class="h-4 w-4 text-emerald-600 shrink-0" />
@@ -429,17 +435,193 @@
           type="button"
           onclick={openInspectionModal}
           disabled={!currentCsv.trim()}
-          class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-500/10 hover:bg-blue-700 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Eye class="h-4 w-4" />
-          <span>Inspect & Preview CSV</span>
+          <ShieldCheck class="h-3.5 w-3.5" />
+          <span>Detailed Schema Check</span>
         </button>
       </div>
     </div>
   </div>
+
+  <!-- Verified Records Ready Section (Matches Screenshot) -->
+  {#if liveParsedResult && liveParsedResult.totalCount > 0}
+    <div class="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+      <!-- Section Header with Eye Icon & Confirm Button -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
+        <div class="flex items-center gap-2.5">
+          <div class="h-7 w-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Eye class="h-4 w-4" />
+          </div>
+          <h3 class="font-extrabold text-base text-slate-900 tracking-tight">
+            Verified Records Ready ({liveParsedResult.validCount} {currentConfig.label.toLowerCase()})
+          </h3>
+        </div>
+
+        <form
+          method="POST"
+          action="?/{currentConfig.actionName}"
+          use:enhance={() => {
+            isSubmitting = true;
+            return async ({ update }) => {
+              isSubmitting = false;
+              await update();
+            };
+          }}
+          class="inline-flex"
+        >
+          <input type="hidden" name="csvData" value={currentCsv} />
+          {#if activeTab === "listings"}
+            <input type="hidden" name="status" value={listingStatus} />
+          {/if}
+
+          <button
+            type="submit"
+            disabled={isSubmitting || liveParsedResult.validCount === 0}
+            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs shadow-xs transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {#if isSubmitting}
+              <Loader2 class="h-4 w-4 animate-spin" />
+              <span>Importing {liveParsedResult.validCount} Records...</span>
+            {:else}
+              <span>Confirm & Import {liveParsedResult.validCount} Records</span>
+            {/if}
+          </button>
+        </form>
+      </div>
+
+      <!-- Verified Table Card -->
+      <div class="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-xs">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-white border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4 w-12 text-center">#</th>
+                {#if activeTab === "listings"}
+                  <th class="py-3 px-4">BUSINESS TITLE</th>
+                  <th class="py-3 px-4">CATEGORY</th>
+                  <th class="py-3 px-4">LOCALITY / ADDRESS</th>
+                  <th class="py-3 px-4">OPENING HOURS</th>
+                  <th class="py-3 px-4">PHONE</th>
+                {:else if activeTab === "categories"}
+                  <th class="py-3 px-4">CATEGORY NAME</th>
+                  <th class="py-3 px-4">SLUG</th>
+                  <th class="py-3 px-4">PARENT CATEGORY</th>
+                  <th class="py-3 px-4">FEATURED</th>
+                  <th class="py-3 px-4">SORT ORDER</th>
+                {:else if activeTab === "locations"}
+                  <th class="py-3 px-4">LOCATION NAME</th>
+                  <th class="py-3 px-4">SLUG</th>
+                  <th class="py-3 px-4">PARENT LOCATION</th>
+                  <th class="py-3 px-4">COORDINATES</th>
+                  <th class="py-3 px-4">FEATURED</th>
+                {/if}
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-sans">
+              {#each liveParsedResult.rows as row, idx}
+                <tr class="{row.isValid ? 'hover:bg-slate-50/50' : 'bg-rose-50/40 hover:bg-rose-50/60'} transition">
+                  <td class="py-3 px-4 text-center font-medium text-slate-500">{idx + 1}</td>
+                  {#if activeTab === "listings"}
+                    <td class="py-3 px-4">
+                      <span class="font-bold text-slate-900 text-sm block">{row.data.title || "—"}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                      {#if row.data.category}
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100/80">
+                          {row.data.category}
+                        </span>
+                      {:else}
+                        <span class="text-slate-400">—</span>
+                      {/if}
+                    </td>
+                    <td class="py-3 px-4 text-slate-700 max-w-sm">
+                      {#if row.data.locality}
+                        <span class="font-bold text-slate-800">{row.data.locality}:</span>
+                      {/if}
+                      <span class="text-slate-600">{row.data.address || "—"}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                      {#if row.data.openinghours}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+                          <Clock class="h-3 w-3 text-emerald-600 shrink-0" />
+                          <span>{row.data.openinghours}</span>
+                        </span>
+                      {:else}
+                        <span class="text-slate-400">—</span>
+                      {/if}
+                    </td>
+                    <td class="py-3 px-4 font-mono text-xs text-slate-700">
+                      {row.data.phone || "—"}
+                    </td>
+                  {:else if activeTab === "categories"}
+                    <td class="py-3 px-4">
+                      <span class="font-bold text-slate-900 text-sm block">{row.data.name || row.data.title || "—"}</span>
+                    </td>
+                    <td class="py-3 px-4 font-mono text-xs text-slate-600">
+                      {row.data.slug || "auto-generated"}
+                    </td>
+                    <td class="py-3 px-4">
+                      {#if row.data.parent}
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                          {row.data.parent}
+                        </span>
+                      {:else}
+                        <span class="text-slate-400">None (Root)</span>
+                      {/if}
+                    </td>
+                    <td class="py-3 px-4">
+                      {#if row.data.featured === "true" || row.data.featured === "1"}
+                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Featured</span>
+                      {:else}
+                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500">Standard</span>
+                      {/if}
+                    </td>
+                    <td class="py-3 px-4 text-slate-600 font-mono text-xs">
+                      {row.data.sortorder || "0"}
+                    </td>
+                  {:else if activeTab === "locations"}
+                    <td class="py-3 px-4">
+                      <span class="font-bold text-slate-900 text-sm block">{row.data.name || row.data.title || "—"}</span>
+                    </td>
+                    <td class="py-3 px-4 font-mono text-xs text-slate-600">
+                      {row.data.slug || "auto-generated"}
+                    </td>
+                    <td class="py-3 px-4">
+                      {#if row.data.parent}
+                        <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                          {row.data.parent}
+                        </span>
+                      {:else}
+                        <span class="text-slate-400">None (City Center)</span>
+                      {/if}
+                    </td>
+                    <td class="py-3 px-4 font-mono text-xs text-slate-600">
+                      {#if row.data.latitude && row.data.longitude}
+                        {row.data.latitude}, {row.data.longitude}
+                      {:else}
+                        <span class="text-slate-400">—</span>
+                      {/if}
+                    </td>
+                    <td class="py-3 px-4">
+                      {#if row.data.featured === "true" || row.data.featured === "1"}
+                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Featured</span>
+                      {:else}
+                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500">Standard</span>
+                      {/if}
+                    </td>
+                  {/if}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
-<!-- Pre-Flight Inspection Modal / Drawer -->
+<!-- Pre-Flight Detailed Modal / Drawer -->
 {#if isInspectModalOpen && inspectionResult}
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs animate-in fade-in duration-200">
     <div class="bg-white rounded-3xl border border-slate-200/90 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">

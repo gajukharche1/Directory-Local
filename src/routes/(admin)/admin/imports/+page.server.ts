@@ -119,7 +119,7 @@ export const actions: Actions = {
       const catKey = (row.category || row.categoryslug || "").toLowerCase().trim();
       const categoryId = catMap.get(catKey);
 
-      const locKey = (row.location || row.locationslug || "").toLowerCase().trim();
+      const locKey = (row.location || row.locationslug || row.locality || "").toLowerCase().trim();
       const locationId = locMap.get(locKey);
 
       const baseSlug = generateSlug(title) || `listing-${Date.now()}`;
