@@ -12,6 +12,14 @@ commits:
   - 156d72f: "feat(listing): add sticky desktop lead card and review rating histogram"
   - 62ba7a3: "test(listing): integrate Schema.org JSON-LD, verify WCAG AA and typecheck"
   - 108b697: "feat(admin-listing): add full admin listing editor with SEO keywords, OpenGraph banner and social live preview"
+  - abd72c1: "docs(phase-04): record final commit hash in summary"
+  - 471f6e2: "fix(admin-listing): update SEO section header numbering to 8"
+  - 915626a: "style(admin-listing): reduce bottom floating save dock and button size"
+  - 369a737: "style(admin-listing): convert bottom save dock to floating centered half-width capsule"
+  - f9dab82: "style(admin-listing): enhance Save & Update buttons with vibrant red color, shadow and press animation"
+  - bcc6e1d: "refactor(admin-listing): move Administrative Controls block to the bottom of the form"
+  - 2818cda: "feat(admin-ui): modernize admin listing dashboard with soft pastel color scheme and card layouts matching reference"
+  - 97a0553: "refactor(admin-listings): use $derived for reactive status tabs with counts"
 provides:
   - Responsive Bento 5-tile photo mosaic with CLS=0 pre-allocated aspect ratios and swipeable mobile carousel
   - Full-screen ListingLightboxModal with keyboard navigation (Esc, Arrow Left/Right) and thumbnail jump strip
@@ -25,7 +33,9 @@ provides:
   - Dynamic Schema.org LocalBusiness JSON-LD injection with geo-coordinates, images, telephone, and aggregate ratings
   - Full Admin Listing Editor layout matching enterprise design (Core Details, Business Classification, Geo-Location & Maps, Contact & Support Channels, Amenities & Facilities, Operating Hours, Special Highlights & Corporate Badges, Administrative Controls, SEO & Meta Tags, and Conversion Rate Optimization)
   - Enhanced SEO block with recommended character counters (60 and 160), Comma-separated SEO Keywords, Open Graph social share banner with thumbnail selector, social live preview card, and 1-click auto-fill from content
-affects: [listings, public-pages, seo, reviews, admin]
+  - Modern pastel dashboard design system (`ui-ux-pro-max`) across the entire Admin Console: soft lilac canvas (`bg-[#F6F7FC]`), clean white sidebar with squircle logo, top 3 pastel KPI cards (blush pink, lavender, and periwinkle), pill search bar, and clean card-wrapped tables
+  - Floating centered half-width capsule save dock with prominent red action buttons
+affects: [listings, public-pages, seo, reviews, admin, dashboard]
 ---
 
 # Phase 04: Modernized Listing Detail & Bento UX Execution Summary
@@ -62,6 +72,14 @@ affects: [listings, public-pages, seo, reviews, admin]
      - Open Graph Social Share Banner (WhatsApp, Twitter, LinkedIn) with optimal dimensions (`1200x630px`) and clickable thumbnail picker from uploaded listing media.
      - Live Social Media Preview card simulating WhatsApp / Twitter / Open Graph cards with real-time reactive title, description, and image display.
      - `✨ Auto-fill from Content` button to intelligently generate SEO meta tags from listing content.
+7. **Floating Centered Half-Width Capsule Save Dock**:
+   - Replaced full-width bottom bar with a modern floating capsule (`w-[92%] sm:w-2/3 md:w-1/2 max-w-2xl rounded-2xl shadow-2xl`).
+   - Scaled down buttons for compact elegance with vibrant red branding (`bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/30 active:scale-95`).
+   - Moved Administrative Controls & Monetization block to the bottom of the form for seamless workflow.
+8. **Modern Pastel Dashboard & Admin Console Redesign (`ui-ux-pro-max`)**:
+   - Re-themed Admin Layout (`src/routes/(admin)/admin/+layout.svelte`) with a soft periwinkle tinted canvas (`bg-[#F6F7FC]`), clean white sidebar, squircle app icon, and pill navigation with pulse indicators.
+   - Overhauled Admin Listings Directory (`src/routes/(admin)/admin/listings/+page.svelte`) with 3 top pastel KPI cards (blush pink for total listings, soft lavender for live storefronts, periwinkle for moderation queue), pill search input, and card-wrapped table.
+   - Refined main Overview Dashboard (`src/routes/(admin)/admin/+page.svelte`) with matching pastel stat cards.
    - All 11 unit tests pass in Vitest; hot module replacement verified on local dev server.
 
 ## Verification

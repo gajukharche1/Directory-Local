@@ -45,10 +45,31 @@ Elevate the public business listing profile (`/listing/[slug]`) into a modern, h
 - [ ] **Task 4.3**: Commit Wave 4: `git commit -m "feat(listing): add sticky desktop lead card and review rating histogram"`.
 
 ### Wave 5: Page Assembly, Schema.org SEO & Verification
-- [ ] **Task 5.1**: Integrate all components into `src/routes/(public)/listing/[slug]/+page.svelte` and ensure `toPOJO` serialization in `+page.server.ts`.
-- [ ] **Task 5.2**: Inject dynamic Schema.org `LocalBusiness` / subtype JSON-LD with geo-coordinates, hours specification, and aggregate rating.
-- [ ] **Task 5.3**: Run accessibility audit (WCAG AA 4.5:1 text contrast, 48px touch targets on mobile) and verify `npm run check` passes with 0 errors.
-- [ ] **Task 5.4**: Commit Wave 5: `git commit -m "test(listing): integrate Schema.org JSON-LD, verify WCAG AA and typecheck"`.
+- [x] **Task 5.1**: Integrate all components into `src/routes/(public)/listing/[slug]/+page.svelte` and ensure `toPOJO` serialization in `+page.server.ts`.
+- [x] **Task 5.2**: Inject dynamic Schema.org `LocalBusiness` / subtype JSON-LD with geo-coordinates, hours specification, and aggregate rating.
+- [x] **Task 5.3**: Run accessibility audit (WCAG AA 4.5:1 text contrast, 48px touch targets on mobile) and verify `npm run check` passes with 0 errors.
+- [x] **Task 5.4**: Commit Wave 5: `git commit -m "test(listing): integrate Schema.org JSON-LD, verify WCAG AA and typecheck"`.
+
+### Wave 6: Comprehensive Admin Listing Editor & SEO / Open Graph Block
+- [x] **Task 6.1**: Add `seoKeywords` and `ogImage` to `model Listing` in `prisma/schema.prisma` and sync database.
+- [x] **Task 6.2**: Expand `ListingService.update(...)` to support administrative metadata bypass, custom sections, and SEO attributes.
+- [x] **Task 6.3**: Build full multi-section Admin Listing Editor in `src/routes/(admin)/admin/listings/[id]/+page.svelte` and `+page.server.ts`.
+- [x] **Task 6.4**: Implement Section 8: Search Engine Optimization (SEO & Meta Tags) with recommended length counters (60 & 160 chars), comma-separated SEO keywords, OpenGraph banner picker with 1200x630px indicator, live social preview card, and 1-click auto-fill from content.
+- [x] **Task 6.5**: Inject Open Graph, Twitter card, and meta keywords into `<svelte:head>` on public storefront.
+- [x] **Task 6.6**: Commit Wave 6: `git commit -m "feat(admin-listing): add full admin listing editor with SEO keywords, OpenGraph banner and social live preview"`.
+
+### Wave 7: Floating Save Pill Dock & Ergonomic Actions
+- [x] **Task 7.1**: Reduce floating save dock padding and scale down buttons for compact, non-intrusive mobile/desktop appearance.
+- [x] **Task 7.2**: Convert bottom save bar to a floating centered half-width capsule (`max-w-2xl w-[92%] sm:w-2/3 md:w-1/2 rounded-2xl shadow-2xl`).
+- [x] **Task 7.3**: Elevate Save & Update buttons with vibrant red theme (`bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/30 active:scale-95`).
+- [x] **Task 7.4**: Move Administrative Controls & Monetization block to the bottom of the form.
+- [x] **Task 7.5**: Commit Wave 7.
+
+### Wave 8: Modern Dashboard Redesign with Soft Pastel Aesthetic (`ui-ux-pro-max`)
+- [x] **Task 8.1**: Redesign Admin Layout (`src/routes/(admin)/admin/+layout.svelte`) with soft tinted background (`bg-[#F6F7FC]`), clean white sidebar, squircle app icon, and pill navigation with active pulse indicators.
+- [x] **Task 8.2**: Modernize Admin Listings Directory (`src/routes/(admin)/admin/listings/+page.svelte`) with top 3 pastel KPI cards (blush pink for total listings, soft lavender for live storefronts, periwinkle for moderation queue), pill search bar, and clean card-wrapped table.
+- [x] **Task 8.3**: Upgrade Overview Dashboard (`src/routes/(admin)/admin/+page.svelte`) with matching pastel stat cards.
+- [x] **Task 8.4**: Commit Wave 8: `git commit -m "feat(admin-ui): modernize admin listing dashboard with soft pastel color scheme and card layouts matching reference"`.
 
 ---
 
