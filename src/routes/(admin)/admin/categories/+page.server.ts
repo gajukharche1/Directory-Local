@@ -2,26 +2,46 @@ import { fail, redirect } from "@sveltejs/kit";
 import type { PageServerLoad, Actions } from "./$types";
 import db from "$lib/db/client";
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
   if (!locals.user || (locals.user.role !== "admin" && locals.user.role !== "moderator")) {
     throw redirect(303, "/login?redirectTo=/admin/categories");
   }
 
-  const categories = await db.category.findMany({
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    include: {
-      parent: {
-        select: { id: true, name: true },
-      },
-      _count: {
-        select: { listings: true, children: true },
-      },
-    },
-  }).catch(() => []);
+  const query = url.searchParams.get("q") || "";
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+  const pageSize = 10;
+  const skip = (page - 1) * pageSize;
 
-  const totalCategories = categories.length;
-  const parentCategoriesCount = categories.filter((c) => !c.parentId).length;
-  const featuredCount = categories.filter((c) => c.featuredOnHome).length;
+  const whereClause: any = {};
+  if (query) {
+    whereClause.OR = [
+      { name: { contains: query, mode: "insensitive" } },
+      { slug: { contains: query, mode: "insensitive" } },
+      { description: { contains: query, mode: "insensitive" } },
+    ];
+  }
+
+  const [categories, totalCount, parentCount, featuredCount] = await Promise.all([
+    db.category.findMany({
+      where: whereClause,
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      skip,
+      take: pageSize,
+      include: {
+        parent: {
+          select: { id: true, name: true },
+        },
+        _count: {
+          select: { listings: true, children: true },
+        },
+      },
+    }).catch(() => []),
+    db.category.count({ where: whereClause }).catch(() => 0),
+    db.category.count({ where: { parentId: null } }).catch(() => 0),
+    db.category.count({ where: { featuredOnHome: true } }).catch(() => 0),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return {
     categories: categories.map((cat) => ({
@@ -29,9 +49,13 @@ export const load: PageServerLoad = async ({ locals }) => {
       listingCount: cat._count.listings,
       subcategoriesCount: cat._count.children,
     })),
-    totalCategories,
-    parentCategoriesCount,
+    totalCategories: totalCount,
+    parentCategoriesCount: parentCount,
     featuredCount,
+    page,
+    pageSize,
+    totalPages,
+    query,
   };
 };
 

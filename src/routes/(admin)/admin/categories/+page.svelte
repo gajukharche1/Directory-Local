@@ -11,10 +11,11 @@
     ExternalLink,
     Edit
   } from "lucide-svelte";
+  import Pagination from "$lib/components/ui/Pagination.svelte";
 
   let { data }: { data: PageData } = $props();
 
-  let searchQuery = $state("");
+  let searchQuery = $state(data.query || "");
 
   let filteredCategories = $derived(
     data.categories.filter((cat) =>
@@ -97,15 +98,25 @@
   </div>
 
   <!-- Search Filter -->
-  <div class="bg-white rounded-2xl border border-slate-200/80 p-3 shadow-2xs flex items-center gap-2">
+  <form method="GET" class="bg-white rounded-2xl border border-slate-200/80 p-3 shadow-2xs flex items-center gap-2">
     <Search class="h-4 w-4 text-slate-400 ml-2 shrink-0" />
     <input
       type="text"
+      name="q"
       bind:value={searchQuery}
-      placeholder="Search categories by name, slug or parent group..."
+      placeholder="Search categories by name, slug or parent group (Press Enter to search all)..."
       class="w-full text-xs text-slate-900 placeholder:text-slate-400 focus:outline-hidden bg-transparent"
     />
-  </div>
+    {#if searchQuery}
+      <a
+        href="/admin/categories"
+        class="text-xs text-slate-400 hover:text-slate-600 font-bold px-2 py-1"
+        onclick={() => (searchQuery = "")}
+      >
+        Clear
+      </a>
+    {/if}
+  </form>
 
   <!-- Categories Table Card -->
   <div class="bg-white rounded-3xl border border-slate-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] overflow-hidden">
@@ -201,5 +212,15 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination Controls -->
+    <Pagination
+      currentPage={data.page}
+      totalPages={data.totalPages}
+      totalItems={data.totalCategories}
+      pageSize={data.pageSize}
+      baseUrl="/admin/categories"
+      extraParams={{ q: data.query }}
+    />
   </div>
 </div>

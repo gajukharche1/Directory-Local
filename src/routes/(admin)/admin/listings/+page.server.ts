@@ -6,6 +6,9 @@ import { ListingStatus } from "@prisma/client";
 export const load: PageServerLoad = async ({ url }) => {
   const statusFilter = url.searchParams.get("status") as ListingStatus | null;
   const query = url.searchParams.get("q") || "";
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
+  const pageSize = 10;
+  const skip = (page - 1) * pageSize;
 
   const whereClause: any = {};
   if (statusFilter && Object.values(ListingStatus).includes(statusFilter)) {
@@ -43,7 +46,8 @@ export const load: PageServerLoad = async ({ url }) => {
           },
         },
         orderBy: { createdAt: "desc" },
-        take: 50,
+        skip,
+        take: pageSize,
       })
       .catch(() => []),
     db.listing.count({ where: whereClause }).catch(() => 0),
@@ -51,6 +55,8 @@ export const load: PageServerLoad = async ({ url }) => {
     db.listing.count({ where: { status: ListingStatus.pending_review } }).catch(() => 0),
     db.listing.count({ where: { status: ListingStatus.draft } }).catch(() => 0),
   ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return {
     listings: listings.map((l) => ({
@@ -63,6 +69,9 @@ export const load: PageServerLoad = async ({ url }) => {
     draftCount,
     statusFilter: statusFilter || "",
     query,
+    page,
+    pageSize,
+    totalPages,
   };
 };
 
@@ -72,23 +81,18 @@ export const actions: Actions = {
     const listingId = formData.get("listingId") as string;
     const status = formData.get("status") as ListingStatus;
 
-    if (!listingId || !status) {
-      return fail(400, { error: "Listing ID and status required" });
+    if (!listingId || !status || !Object.values(ListingStatus).includes(status)) {
+      return fail(400, { message: "Invalid listing or status" });
     }
 
     try {
       await db.listing.update({
         where: { id: listingId },
-        data: {
-          status,
-          ...(status === ListingStatus.published && { publishedAt: new Date() }),
-        },
+        data: { status },
       });
       return { success: true };
-    } catch (err) {
-      return fail(400, {
-        error: err instanceof Error ? err.message : "Failed to update listing status",
-      });
+    } catch (err: any) {
+      return fail(500, { message: err?.message || "Failed to update listing status" });
     }
   },
 
@@ -97,43 +101,29 @@ export const actions: Actions = {
     const rawIds = formData.get("ids") as string;
     const status = formData.get("status") as ListingStatus;
 
+    if (!rawIds || !status || !Object.values(ListingStatus).includes(status)) {
+      return fail(400, { message: "Invalid parameters for bulk update" });
+    }
+
     let ids: string[] = [];
     try {
-      if (rawIds) {
-        ids = JSON.parse(rawIds);
-      } else {
-        ids = formData.getAll("ids") as string[];
-      }
+      ids = JSON.parse(rawIds);
     } catch {
-      ids = formData.getAll("ids") as string[];
+      return fail(400, { message: "Malformed IDs payload" });
     }
 
-    if (!Array.isArray(ids) || ids.length === 0 || !status) {
-      return fail(400, { error: "Valid listing IDs and target status are required" });
-    }
-
-    if (!Object.values(ListingStatus).includes(status)) {
-      return fail(400, { error: "Invalid status value provided" });
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return fail(400, { message: "No listings selected" });
     }
 
     try {
       const result = await db.listing.updateMany({
         where: { id: { in: ids } },
-        data: {
-          status,
-          ...(status === ListingStatus.published && { publishedAt: new Date() }),
-        },
+        data: { status },
       });
-
-      return {
-        success: true,
-        count: result.count,
-        message: `Successfully updated ${result.count} listing(s) to ${status.replace("_", " ")}`,
-      };
-    } catch (err) {
-      return fail(400, {
-        error: err instanceof Error ? err.message : "Failed to bulk update listing statuses",
-      });
+      return { success: true, count: result.count };
+    } catch (err: any) {
+      return fail(500, { message: err?.message || "Failed to bulk update status" });
     }
   },
 
@@ -141,35 +131,28 @@ export const actions: Actions = {
     const formData = await request.formData();
     const rawIds = formData.get("ids") as string;
 
+    if (!rawIds) {
+      return fail(400, { message: "Missing IDs for bulk delete" });
+    }
+
     let ids: string[] = [];
     try {
-      if (rawIds) {
-        ids = JSON.parse(rawIds);
-      } else {
-        ids = formData.getAll("ids") as string[];
-      }
+      ids = JSON.parse(rawIds);
     } catch {
-      ids = formData.getAll("ids") as string[];
+      return fail(400, { message: "Malformed IDs payload" });
     }
 
     if (!Array.isArray(ids) || ids.length === 0) {
-      return fail(400, { error: "Listing IDs required for deletion" });
+      return fail(400, { message: "No listings selected" });
     }
 
     try {
       const result = await db.listing.deleteMany({
         where: { id: { in: ids } },
       });
-
-      return {
-        success: true,
-        count: result.count,
-        message: `Successfully deleted ${result.count} listing(s)`,
-      };
-    } catch (err) {
-      return fail(400, {
-        error: err instanceof Error ? err.message : "Failed to bulk delete listings",
-      });
+      return { success: true, count: result.count };
+    } catch (err: any) {
+      return fail(500, { message: err?.message || "Failed to bulk delete listings" });
     }
   },
 };

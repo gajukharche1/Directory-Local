@@ -25,6 +25,7 @@
   import BulkSelectToolbar from "$lib/components/ui/bulk-select/BulkSelectToolbar.svelte";
   import BulkConfirmModal from "$lib/components/ui/bulk-select/BulkConfirmModal.svelte";
   import ListingTableSkeleton from "$lib/components/skeletons/ListingTableSkeleton.svelte";
+  import Pagination from "$lib/components/ui/Pagination.svelte";
 
   let { data }: { data: PageData } = $props();
 
@@ -389,6 +390,16 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination Controls -->
+      <Pagination
+        currentPage={data.page}
+        totalPages={data.totalPages}
+        totalItems={data.totalCount}
+        pageSize={data.pageSize}
+        baseUrl="/admin/listings"
+        extraParams={{ q: data.query, status: data.statusFilter }}
+      />
     </div>
   {/if}
 
