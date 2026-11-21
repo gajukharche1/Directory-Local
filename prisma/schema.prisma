@@ -89,6 +89,7 @@ model User {
   favourites         Favourite[]
   sessions           Session[]
   media              Media[]
+  mediaFolders       MediaFolder[]
   dataRequests       PersonalDataRequest[]
 
   @@index([role])
@@ -399,25 +400,52 @@ model Favourite {
 }
 
 model Media {
-  id         String          @id @default(cuid())
-  listingId  String?
-  ownerId    String?
-  key        String          @unique
-  url        String
-  mimeType   String
-  bytes      Int
-  width      Int?
-  height     Int?
-  altText    String?
-  scanStatus MediaScanStatus @default(pending)
-  createdAt  DateTime        @default(now())
+  id             String          @id @default(cuid())
+  listingId      String?
+  ownerId        String?
+  folderId       String?
+  key            String          @unique
+  url            String
+  mimeType       String
+  bytes          Int
+  width          Int?
+  height         Int?
+  altText        String?
+  tags           Json?
+  isQuarantined  Boolean         @default(false)
+  scanStatus     MediaScanStatus @default(pending)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @default(now()) @updatedAt
+  deletedAt      DateTime?
 
-  listing    Listing?        @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  owner      User?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  listing        Listing?        @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  owner          User?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  folder         MediaFolder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
   @@index([listingId])
   @@index([ownerId])
+  @@index([folderId])
+  @@index([isQuarantined])
   @@map("media")
+}
+
+model MediaFolder {
+  id        String        @id @default(cuid())
+  ownerId   String?
+  name      String
+  slug      String
+  parentId  String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  owner     User?         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  parent    MediaFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  MediaFolder[] @relation("FolderHierarchy")
+  media     Media[]
+
+  @@unique([ownerId, slug, parentId])
+  @@index([ownerId])
+  @@map("media_folders")
 }
 
 model AuditLog {

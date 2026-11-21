@@ -1,96 +1,356 @@
 import db from "$lib/db/client";
+import { StorageService } from "./storage.service";
 
 export const ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/avif",
+  "image/svg+xml",
 ];
 
-export const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB per file
 
-export interface MediaUploadRequest {
-  listingId: string;
+export interface CreateMediaTicketInput {
   fileName: string;
   mimeType: string;
   bytes: number;
+  listingId?: string;
+  folderId?: string;
+  altText?: string;
+}
+
+export interface ConfirmMediaInput {
+  key: string;
+  url: string;
+  mimeType: string;
+  bytes: number;
+  fileName?: string;
+  listingId?: string;
+  folderId?: string;
+  altText?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface GetMediaOptions {
+  folderId?: string | null;
+  search?: string;
+  limit?: number;
+  page?: number;
 }
 
 export class MediaService {
   /**
-   * Checks whether the listing can accept more photos according to its pricing plan
+   * Verifies if the merchant can upload more photos under their active pricing plan
    */
-  static async assertCanUploadMedia(ownerId: string, listingId: string): Promise<boolean> {
-    const listing = await db.listing.findFirst({
-      where: {
-        id: listingId,
-        ownerId,
-      },
-      include: {
-        plan: true,
-        _count: {
-          select: {
-            media: true,
+  static async assertCanUploadMedia(ownerId: string, listingId?: string): Promise<boolean> {
+    if (listingId) {
+      const listing = await db.listing.findFirst({
+        where: { id: listingId, ownerId },
+        include: {
+          plan: true,
+          _count: {
+            select: { media: { where: { deletedAt: null } } },
           },
         },
-      },
-    });
+      });
 
-    if (!listing) {
-      throw new Error("Listing not found or access denied.");
-    }
+      if (!listing) {
+        throw new Error("Listing not found or access denied.");
+      }
 
-    const maxAllowed = listing.plan?.maxPhotos ?? 4;
-    const currentCount = listing._count.media;
+      const maxAllowed = listing.plan?.maxPhotos ?? 6;
+      const currentCount = listing._count.media;
 
-    if (currentCount >= maxAllowed) {
-      throw new Error(
-        `Plan limit reached. Your ${listing.plan?.name || "current"} plan allows up to ${maxAllowed} photos. Please upgrade to add more.`
-      );
+      if (currentCount >= maxAllowed) {
+        throw new Error(
+          `Photo limit reached for this listing. Your ${listing.plan?.name || "current"} plan allows up to ${maxAllowed} photos.`
+        );
+      }
     }
 
     return true;
   }
 
   /**
-   * Generates a pre-signed S3 / R2 upload payload contract
+   * Generates a pre-signed or local storage upload ticket
    */
-  static async createUploadTicket(ownerId: string, req: MediaUploadRequest) {
-    if (!ALLOWED_MIME_TYPES.includes(req.mimeType)) {
-      throw new Error("Invalid file type. Allowed formats: JPEG, PNG, WebP, AVIF.");
+  static async createUploadTicket(ownerId: string, input: CreateMediaTicketInput) {
+    if (!ALLOWED_MIME_TYPES.includes(input.mimeType)) {
+      throw new Error("Invalid file type. Supported formats: JPG, PNG, WebP, AVIF, SVG.");
     }
 
-    if (req.bytes > MAX_FILE_SIZE_BYTES) {
-      throw new Error("File exceeds the 5 MB maximum size limit.");
+    if (input.bytes > MAX_FILE_SIZE_BYTES) {
+      throw new Error("File exceeds the 10 MB maximum size limit.");
     }
 
-    await this.assertCanUploadMedia(ownerId, req.listingId);
+    if (input.listingId) {
+      await this.assertCanUploadMedia(ownerId, input.listingId);
+    }
 
-    const fileExtension = req.fileName.split(".").pop() || "webp";
-    const objectKey = `listings/${req.listingId}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExtension}`;
+    const prefix = input.listingId ? `listings/${input.listingId}` : `users/${ownerId}`;
+    const ticket = await StorageService.createUploadTicket(
+      input.fileName,
+      input.mimeType,
+      input.bytes,
+      prefix
+    );
 
-    const publicBase = process.env.NEXT_PUBLIC_STORAGE_PUBLIC_URL || "http://localhost:9000/directory-media";
-    const publicUrl = `${publicBase}/${objectKey}`;
+    return ticket;
+  }
 
-    // Create pending media record
+  /**
+   * Confirms the upload and creates the Media database record
+   */
+  static async confirmUpload(ownerId: string, input: ConfirmMediaInput) {
+    if (!ALLOWED_MIME_TYPES.includes(input.mimeType)) {
+      throw new Error("Invalid MIME type.");
+    }
+
     const media = await db.media.create({
       data: {
-        listingId: req.listingId,
         ownerId,
-        key: objectKey,
-        url: publicUrl,
-        mimeType: req.mimeType,
-        bytes: req.bytes,
-        scanStatus: "pending",
+        listingId: input.listingId || null,
+        folderId: input.folderId || null,
+        key: input.key,
+        url: input.url,
+        mimeType: input.mimeType,
+        bytes: input.bytes,
+        width: input.width || null,
+        height: input.height || null,
+        altText: input.altText || input.fileName || "Uploaded business media",
+        scanStatus: "clean",
       },
     });
 
-    return {
-      mediaId: media.id,
-      objectKey,
-      publicUrl,
-      // In production with R2/S3 credentials, this returns an S3 PutObject pre-signed URL
-      uploadUrl: `/api/upload/direct?key=${encodeURIComponent(objectKey)}`,
+    return media;
+  }
+
+  /**
+   * Retrieves merchant media with folder filtering, pagination, and total quota calculations
+   */
+  static async getMerchantMedia(ownerId: string, options: GetMediaOptions = {}) {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 24));
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      ownerId,
+      deletedAt: null,
     };
+
+    if (options.folderId !== undefined) {
+      where.folderId = options.folderId;
+    }
+
+    if (options.search) {
+      where.OR = [
+        { altText: { contains: options.search, mode: "insensitive" } },
+        { key: { contains: options.search, mode: "insensitive" } },
+      ];
+    }
+
+    const [items, totalCount, totalBytesAgg] = await Promise.all([
+      db.media.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          folder: { select: { id: true, name: true } },
+          listing: { select: { id: true, title: true, slug: true } },
+        },
+      }),
+      db.media.count({ where }),
+      db.media.aggregate({
+        where: { ownerId, deletedAt: null },
+        _sum: { bytes: true },
+      }),
+    ]);
+
+    const totalBytesUsed = totalBytesAgg._sum.bytes || 0;
+    const maxStorageBytes = 100 * 1024 * 1024; // 100 MB standard merchant quota
+
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
+      totalBytesUsed,
+      maxStorageBytes,
+      quotaPercentage: Math.min(100, Math.round((totalBytesUsed / maxStorageBytes) * 100)),
+    };
+  }
+
+  /**
+   * Retrieves global directory media for administrative inspection
+   */
+  static async getAdminMedia(options: {
+    search?: string;
+    mimeType?: string;
+    isQuarantined?: boolean;
+    page?: number;
+    limit?: number;
+  } = {}) {
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(100, Math.max(1, options.limit || 24));
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      deletedAt: null,
+    };
+
+    if (options.isQuarantined !== undefined) {
+      where.isQuarantined = options.isQuarantined;
+    }
+
+    if (options.mimeType) {
+      where.mimeType = { startsWith: options.mimeType };
+    }
+
+    if (options.search) {
+      where.OR = [
+        { altText: { contains: options.search, mode: "insensitive" } },
+        { key: { contains: options.search, mode: "insensitive" } },
+        { owner: { email: { contains: options.search, mode: "insensitive" } } },
+      ];
+    }
+
+    const [items, totalCount, totalStorageAgg] = await Promise.all([
+      db.media.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          owner: { select: { id: true, name: true, email: true } },
+          listing: { select: { id: true, title: true, slug: true } },
+        },
+      }),
+      db.media.count({ where }),
+      db.media.aggregate({
+        where: { deletedAt: null },
+        _sum: { bytes: true },
+      }),
+    ]);
+
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
+      totalBytesSystem: totalStorageAgg._sum.bytes || 0,
+    };
+  }
+
+  /**
+   * Admin toggle to quarantine or un-quarantine suspicious media
+   */
+  static async toggleQuarantine(mediaId: string, isQuarantined: boolean) {
+    return await db.media.update({
+      where: { id: mediaId },
+      data: { isQuarantined },
+    });
+  }
+
+  /**
+   * Soft deletes a media record
+   */
+  static async deleteMedia(mediaId: string, ownerId: string, isAdmin: boolean = false) {
+    const where: any = { id: mediaId };
+    if (!isAdmin) {
+      where.ownerId = ownerId;
+    }
+
+    const media = await db.media.findFirst({ where });
+    if (!media) {
+      throw new Error("Media asset not found or access denied.");
+    }
+
+    await db.media.update({
+      where: { id: mediaId },
+      data: { deletedAt: new Date() },
+    });
+
+    return true;
+  }
+
+  /**
+   * Virtual Folders: Retrieves folders for an owner
+   */
+  static async getFolders(ownerId: string, parentId: string | null = null) {
+    return await db.mediaFolder.findMany({
+      where: {
+        ownerId,
+        parentId,
+      },
+      orderBy: { name: "asc" },
+      include: {
+        _count: {
+          select: {
+            media: { where: { deletedAt: null } },
+            children: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Virtual Folders: Creates a new folder
+   */
+  static async createFolder(ownerId: string, name: string, parentId?: string) {
+    const cleanName = name.trim();
+    if (!cleanName) throw new Error("Folder name cannot be empty.");
+
+    const slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+    return await db.mediaFolder.create({
+      data: {
+        ownerId,
+        name: cleanName,
+        slug: slug || "folder",
+        parentId: parentId || null,
+      },
+    });
+  }
+
+  /**
+   * Virtual Folders: Deletes a folder and detaches its assets
+   */
+  static async deleteFolder(folderId: string, ownerId: string) {
+    const folder = await db.mediaFolder.findFirst({
+      where: { id: folderId, ownerId },
+    });
+
+    if (!folder) throw new Error("Folder not found.");
+
+    // Detach assets in this folder
+    await db.media.updateMany({
+      where: { folderId },
+      data: { folderId: null },
+    });
+
+    await db.mediaFolder.delete({
+      where: { id: folderId },
+    });
+
+    return true;
+  }
+
+  /**
+   * Move assets to a target folder
+   */
+  static async moveMediaToFolder(mediaIds: string[], folderId: string | null, ownerId: string) {
+    return await db.media.updateMany({
+      where: {
+        id: { in: mediaIds },
+        ownerId,
+      },
+      data: { folderId },
+    });
   }
 }
