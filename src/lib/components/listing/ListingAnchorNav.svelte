@@ -7,7 +7,13 @@
 
   let { activeSection = "overview" }: Props = $props();
 
-  let currentActive = $state(activeSection);
+  let currentActive = $state("overview");
+
+  $effect(() => {
+    if (activeSection) {
+      currentActive = activeSection;
+    }
+  });
 
   const sections = [
     { id: "overview", label: "Overview" },

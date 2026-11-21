@@ -1,9 +1,28 @@
 <script lang="ts">
-  import { Star, MapPin, Sparkles, Check, ChevronRight } from "lucide-svelte";
-  import ListingGallery from "$lib/components/listing/ListingGallery.svelte";
-  import OpeningHoursCard from "$lib/components/listing/OpeningHoursCard.svelte";
-  import ContactCard from "$lib/components/listing/ContactCard.svelte";
+  import {
+    Star,
+    MapPin,
+    Sparkles,
+    Check,
+    ChevronRight,
+    CheckCircle2,
+    Share2,
+    Calendar,
+    Globe,
+    Phone,
+    MessageCircle,
+    Navigation,
+  } from "lucide-svelte";
   import Header from "$lib/components/ui/Header.svelte";
+  import ListingBentoHero from "$lib/components/listing/ListingBentoHero.svelte";
+  import ListingTrustHeader from "$lib/components/listing/ListingTrustHeader.svelte";
+  import ListingActionDock from "$lib/components/listing/ListingActionDock.svelte";
+  import ListingAnchorNav from "$lib/components/listing/ListingAnchorNav.svelte";
+  import ListingServicesCatalog from "$lib/components/listing/ListingServicesCatalog.svelte";
+  import ListingSentimentChips from "$lib/components/listing/ListingSentimentChips.svelte";
+  import ListingStickyLeadCard from "$lib/components/listing/ListingStickyLeadCard.svelte";
+  import ReviewDistribution from "$lib/components/reviews/ReviewDistribution.svelte";
+  import OpeningHoursCard from "$lib/components/listing/OpeningHoursCard.svelte";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -11,13 +30,25 @@
   let listing = $derived(data.listing);
   let primaryCategory = $derived(listing?.categories?.[0]?.category);
   let ratingNumber = $derived(Number(listing?.averageRating || 0));
+
+  let selectedServiceName = $state("");
+
+  function handleEnquireService(serviceName?: string) {
+    selectedServiceName = serviceName || "General Services";
+    const leadInput = document.getElementById("leadService") as HTMLInputElement | null;
+    if (leadInput) {
+      leadInput.value = selectedServiceName;
+      leadInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      leadInput.focus();
+    }
+  }
 </script>
 
 <svelte:head>
-  <title>{listing?.title || "Business"} in {listing?.locality || "Local Area"}, Local Business | Reviews & Contact</title>
+  <title>{listing?.title || "Business"} in {listing?.locality || "Local Area"} | Reviews, Rates & Contact</title>
   <meta
     name="description"
-    content={`Contact details, opening hours, photos, ratings, and customer reviews for ${listing?.title || "Business"} located at ${listing?.locality || "Local Area"}, Local Business.`}
+    content={`Contact details, opening hours, photos, rate cards, and customer reviews for ${listing?.title || "Business"} located at ${listing?.locality || "Local Area"}, Local Business.`}
   />
   {#if data.localBusinessSchema}
     {@html `<script type="application/ld+json">${JSON.stringify(data.localBusinessSchema)}</script>`}
@@ -30,171 +61,151 @@
 <Header user={data.user} />
 
 {#if listing}
-  <div class="min-h-screen bg-slate-50 py-8">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Breadcrumbs -->
-      <nav class="flex items-center gap-1.5 text-xs text-slate-500 mb-6">
-        <a href="/" class="hover:text-slate-900 transition">Home</a>
-        <ChevronRight class="h-3 w-3" />
-        {#if primaryCategory}
-          <a href={`/category/${primaryCategory.slug}`} class="hover:text-slate-900 transition">
-            {primaryCategory.name}
-          </a>
-          <ChevronRight class="h-3 w-3" />
-        {/if}
-        <span class="text-slate-900 font-semibold truncate max-w-xs">{listing.title}</span>
-      </nav>
+  <div class="min-h-screen bg-slate-50/60 pb-24 md:pb-16 text-foreground">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <!-- 1. Bento 5-Tile Photo Hero Mosaic with Fullscreen Lightbox -->
+      <section id="photos">
+        <ListingBentoHero
+          images={listing.media || []}
+          businessTitle={listing.title}
+          categoryName={primaryCategory?.name}
+        />
+      </section>
 
-      <!-- Header Title & Badges -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <div class="flex flex-wrap items-center gap-2 mb-2">
-            {#if primaryCategory}
-              <span class="rounded-full bg-indigo-50 border border-indigo-100 px-3 py-0.5 text-xs font-semibold text-indigo-700">
-                {primaryCategory.name}
-              </span>
-            {/if}
-            {#if listing.featured}
-              <span class="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
-                <Sparkles class="h-3 w-3" />
-                <span>Featured Spotlight</span>
-              </span>
-            {/if}
-            {#if listing.priceRange}
-              <span class="text-xs font-bold text-slate-500">
-                {"₹".repeat(Math.min(4, Math.max(1, Math.floor(listing.priceRange))))}
-              </span>
-            {/if}
-          </div>
+      <!-- 2. Trust Header & Badges -->
+      <ListingTrustHeader
+        title={listing.title}
+        primaryCategory={primaryCategory}
+        locality={listing.locality}
+        address={listing.address}
+        averageRating={ratingNumber}
+        reviewCount={listing.reviewCount}
+        claimStatus={listing.claimStatus}
+        featured={listing.featured}
+        priceRange={listing.priceRange}
+        yearEstablished={listing.yearEstablished}
+        openingHours={listing.openingHours}
+      />
 
-          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-            {listing.title}
-          </h1>
+      <!-- 3. Desktop High-Conversion Action Dock (and mobile trigger) -->
+      <ListingActionDock
+        phone={listing.phone}
+        whatsapp={listing.whatsapp}
+        email={listing.email}
+        address={listing.address}
+        businessTitle={listing.title}
+        onenquire={() => handleEnquireService()}
+      />
+    </div>
 
-          <div class="flex items-center gap-3 mt-2 text-xs text-slate-500">
-            <div class="flex items-center gap-1 font-bold text-slate-900">
-              <Star class="h-4 w-4 fill-amber-400 text-amber-400" />
-              <span>{ratingNumber > 0 ? ratingNumber.toFixed(1) : "New"}</span>
-            </div>
-            <span>•</span>
-            <span>{listing.reviewCount || 0} {(listing.reviewCount || 0) === 1 ? "review" : "reviews"}</span>
-            <span>•</span>
-            <div class="flex items-center gap-1">
-              <MapPin class="h-3.5 w-3.5 text-slate-400" />
-              <span>{listing.locality || "Local Area"}, Local Business</span>
-            </div>
-          </div>
-        </div>
+    <!-- 4. Sticky In-Page Navigation Bar -->
+    <ListingAnchorNav />
 
-        <div class="flex items-center gap-2">
-          <a
-            href={`/reviews/new?listingId=${listing.id}&slug=${listing.slug}`}
-            class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 shadow-sm hover:border-slate-300 transition"
-          >
-            ★ Write Review
-          </a>
-        </div>
-      </div>
-
-      <!-- Media Gallery -->
-      <div class="mb-8">
-        <ListingGallery media={listing.media || []} title={listing.title} />
-      </div>
-
-      <!-- Main Content Layout -->
+    <!-- 5. Main Content Layout (2-Column Desktop Grid) -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Left 2 Cols: About, Amenities, Reviews -->
+        <!-- Main Column (Left 2 Columns) -->
         <div class="lg:col-span-2 space-y-8">
-          <!-- Overview / Rich Description -->
-          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 class="font-bold text-base text-slate-900 mb-3">About {listing.title}</h2>
-            <div class="prose prose-sm text-slate-600 max-w-none text-xs leading-relaxed">
-              {@html listing.description || ""}
-            </div>
-          </div>
+          <!-- Section: Overview -->
+          <section id="overview" class="space-y-6 scroll-mt-24">
+            <!-- Sentiment Highlights Chips -->
+            <ListingSentimentChips
+              reviews={listing.reviews || []}
+              averageRating={ratingNumber}
+              reviewCount={listing.reviewCount}
+            />
 
-          <!-- Amenities -->
-          {#if listing.amenities && listing.amenities.length > 0}
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 class="font-bold text-base text-slate-900 mb-3">Amenities & Features</h2>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-                {#each listing.amenities as item}
-                  <div class="flex items-center gap-2 text-slate-700">
-                    <div class="h-4 w-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                      <Check class="h-2.5 w-2.5 stroke-[3]" />
+            <!-- About / Description Card -->
+            <div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xs space-y-3">
+              <h2 class="text-base font-bold text-foreground">About {listing.title}</h2>
+              <div class="prose prose-sm text-muted-foreground max-w-none text-xs leading-relaxed">
+                {@html listing.description || ""}
+              </div>
+            </div>
+
+            <!-- Amenities & Features -->
+            {#if listing.amenities && listing.amenities.length > 0}
+              <div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xs space-y-3">
+                <h3 class="text-sm font-bold text-foreground">Amenities & Key Features</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  {#each listing.amenities as amenity}
+                    <div class="flex items-center gap-2 p-2.5 rounded-xl bg-muted/40 border border-border/60">
+                      <CheckCircle2 class="h-4 w-4 text-emerald-600 shrink-0" />
+                      <span class="text-foreground font-medium truncate">{amenity}</span>
                     </div>
-                    <span>{item}</span>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          {/if}
-
-          <!-- Reviews Section -->
-          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-100">
-              <div>
-                <h2 class="font-bold text-base text-slate-900">Customer Ratings & Reviews</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Verified authentic feedback from local residents</p>
-              </div>
-              <a
-                href={`/reviews/new?listingId=${listing.id}&slug=${listing.slug}`}
-                class="rounded-xl bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700 transition"
-              >
-                Write Review
-              </a>
-            </div>
-
-            {#if !listing.reviews || listing.reviews.length === 0}
-              <div class="text-center py-8 text-slate-400 text-xs">
-                No reviews yet. Be the first neighbor to write a review!
-              </div>
-            {:else}
-              <div class="space-y-4">
-                {#each listing.reviews as rev}
-                  <div class="border-b border-slate-100 last:border-0 pb-4 last:pb-0">
-                    <div class="flex items-center justify-between mb-1">
-                      <span class="font-semibold text-xs text-slate-900">{rev.reviewerName}</span>
-                      <div class="flex items-center gap-0.5">
-                        {#each Array(Math.max(0, Math.floor(rev.rating || 0))) as _}
-                          <Star class="h-3 w-3 fill-amber-400 text-amber-400" />
-                        {/each}
-                      </div>
-                    </div>
-                    <h4 class="font-semibold text-xs text-slate-900 mb-1">{rev.title}</h4>
-                    <p class="text-xs text-slate-600 leading-relaxed">{rev.body}</p>
-                    {#if rev.ownerReply}
-                      <div class="mt-2.5 rounded-xl bg-slate-50 p-3 text-xs border-l-2 border-indigo-600">
-                        <p class="font-bold text-slate-900 text-[11px] mb-0.5">Response from Owner:</p>
-                        <p class="text-slate-600">{rev.ownerReply}</p>
-                      </div>
-                    {/if}
-                  </div>
-                {/each}
+                  {/each}
+                </div>
               </div>
             {/if}
-          </div>
+          </section>
+
+          <!-- Section: Services & Rate Card -->
+          <section id="services" class="scroll-mt-24">
+            <ListingServicesCatalog
+              amenities={listing.amenities}
+              categoryName={primaryCategory?.name}
+              onenquire={handleEnquireService}
+            />
+          </section>
+
+          <!-- Section: Reviews & Customer Feedback -->
+          <section id="reviews" class="scroll-mt-24">
+            <ReviewDistribution
+              reviews={listing.reviews || []}
+              averageRating={ratingNumber}
+              reviewCount={listing.reviewCount}
+              listingId={listing.id}
+              listingSlug={listing.slug}
+            />
+          </section>
+
+          <!-- Section: Location & Hours -->
+          <section id="location" class="scroll-mt-24 space-y-6">
+            <OpeningHoursCard openingHours={listing.openingHours} />
+
+            <div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xs space-y-4">
+              <h3 class="text-sm font-bold text-foreground">Location & Landmarks</h3>
+              <p class="text-xs text-muted-foreground leading-relaxed">
+                <strong class="text-foreground">{listing.address}</strong>
+                {#if listing.landmark}
+                  <br />Landmark: {listing.landmark}
+                {/if}
+              </p>
+
+              <div class="flex flex-wrap items-center gap-2 pt-1">
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${listing.title}, ${listing.address}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors shadow-xs"
+                >
+                  <Navigation class="h-3.5 w-3.5" /> Open in Google Maps
+                </a>
+
+                {#if listing.website}
+                  <a
+                    href={listing.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border bg-card text-foreground text-xs font-medium hover:bg-muted transition-colors"
+                  >
+                    <Globe class="h-3.5 w-3.5 text-muted-foreground" /> Visit Official Website
+                  </a>
+                {/if}
+              </div>
+            </div>
+          </section>
         </div>
 
-        <!-- Right 1 Col: Contact & Location Card, Hours -->
+        <!-- Right Rail Column (Desktop Sticky Lead Dock) -->
         <div class="space-y-6">
-          <ContactCard
+          <ListingStickyLeadCard
             listingId={listing.id}
-            title={listing.title}
-            slug={listing.slug}
+            businessTitle={listing.title}
             phone={listing.phone}
             whatsapp={listing.whatsapp}
-            email={listing.email}
-            website={listing.website}
-            address={listing.address}
-            locality={listing.locality}
-            landmark={listing.landmark}
-            claimStatus={listing.claimStatus}
-            callAllowed={listing.plan?.callButtonAllowed ?? true}
-            whatsappAllowed={listing.plan?.whatsappAllowed ?? true}
+            prefilledService={selectedServiceName}
           />
-
-          <OpeningHoursCard openingHours={listing.openingHours} />
         </div>
       </div>
     </div>

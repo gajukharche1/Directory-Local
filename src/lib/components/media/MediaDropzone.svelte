@@ -3,8 +3,8 @@
   import { uploadMediaFile, type UploadProgressEvent } from "$lib/utils/media-uploader";
 
   interface Props {
-    listingId?: string;
-    folderId?: string;
+    listingId?: string | null;
+    folderId?: string | null;
     onUploadSuccess?: (uploadedMedia: any) => void;
     onUploadError?: (error: string) => void;
   }
@@ -99,7 +99,7 @@
 <div class="space-y-4">
   <!-- Drag and Drop Target -->
   <div
-    role="region"
+    role="button"
     aria-label="File upload dropzone"
     class={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-center gap-3 ${
       isDragging

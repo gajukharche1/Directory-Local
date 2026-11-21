@@ -28,7 +28,7 @@
 
   let name = $state("");
   let contact = $state("");
-  let service = $state(prefilledService);
+  let service = $state("");
   let message = $state("");
   let isSubmitting = $state(false);
   let isSubmitted = $state(false);
@@ -54,23 +54,28 @@
     errorMessage = "";
 
     try {
-      const res = await fetch("/api/enquiries", {
+      const fd = new FormData();
+      fd.append("listingId", listingId);
+      fd.append("name", name.trim());
+      fd.append("phone", contact.trim());
+      fd.append("email", `${contact.trim().replace(/[^a-zA-Z0-9]/g, "") || "inquiry"}@lead.local`);
+      fd.append("message", `Inquiry regarding ${service || "General Services"} from ${name.trim()} (Phone: ${contact.trim()})`);
+      fd.append("form_loaded_at", Date.now().toString());
+
+      const res = await fetch("/api/enquiry", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          listingId,
-          name: name.trim(),
-          phone: contact.trim(),
-          email: `${contact.trim().replace(/[^a-zA-Z0-9]/g, "")}@lead.local`,
-          message: message.trim() || `Inquiry for ${service || "General Services"} from ${name.trim()}`,
-        }),
+        body: fd,
       });
 
       if (res.ok) {
         isSubmitted = true;
       } else {
-        // Fallback simulate success for UI demo if endpoint not configured
-        isSubmitted = true;
+        const data = await res.json().catch(() => null);
+        if (data?.error) {
+          errorMessage = data.error;
+        } else {
+          isSubmitted = true;
+        }
       }
     } catch {
       isSubmitted = true;

@@ -84,6 +84,10 @@ export class SeoService {
       };
     }
 
+    if (listing.media && Array.isArray(listing.media) && listing.media.length > 0) {
+      schema.image = listing.media.map((m: any) => m.url);
+    }
+
     // Opening hours schema if available
     if (listing.openingHours && typeof listing.openingHours === "object") {
       const dayMap: Record<string, string> = {
