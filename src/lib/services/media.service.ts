@@ -191,6 +191,7 @@ export class MediaService {
     search?: string;
     mimeType?: string;
     isQuarantined?: boolean;
+    folderId?: string | null;
     page?: number;
     limit?: number;
   } = {}) {
@@ -201,6 +202,10 @@ export class MediaService {
     const where: any = {
       deletedAt: null,
     };
+
+    if (options.folderId !== undefined) {
+      where.folderId = options.folderId;
+    }
 
     if (options.isQuarantined !== undefined) {
       where.isQuarantined = options.isQuarantined;
@@ -218,7 +223,7 @@ export class MediaService {
       ];
     }
 
-    const [items, totalCount, totalStorageAgg] = await Promise.all([
+    const [items, totalCount, totalStorageAgg, quarantinedCount, cleanCount] = await Promise.all([
       db.media.findMany({
         where,
         orderBy: { createdAt: "desc" },
@@ -227,6 +232,7 @@ export class MediaService {
         include: {
           owner: { select: { id: true, name: true, email: true } },
           listing: { select: { id: true, title: true, slug: true } },
+          folder: { select: { id: true, name: true } },
         },
       }),
       db.media.count({ where }),
@@ -234,15 +240,29 @@ export class MediaService {
         where: { deletedAt: null },
         _sum: { bytes: true },
       }),
+      db.media.count({
+        where: { deletedAt: null, isQuarantined: true },
+      }),
+      db.media.count({
+        where: { deletedAt: null, isQuarantined: false },
+      }),
     ]);
+
+    const totalBytesSystem = totalStorageAgg._sum.bytes || 0;
+    const maxStorageBytes = 1024 * 1024 * 1024; // 1GB default system allocation
+    const quotaPercentage = Math.min(100, Math.round((totalBytesSystem / maxStorageBytes) * 100));
 
     return {
       items,
       totalCount,
+      quarantinedCount,
+      cleanCount,
       page,
       limit,
       totalPages: Math.ceil(totalCount / limit),
-      totalBytesSystem: totalStorageAgg._sum.bytes || 0,
+      totalBytesSystem,
+      maxStorageBytes,
+      quotaPercentage,
     };
   }
 
@@ -252,6 +272,16 @@ export class MediaService {
   static async toggleQuarantine(mediaId: string, isQuarantined: boolean) {
     return await db.media.update({
       where: { id: mediaId },
+      data: { isQuarantined },
+    });
+  }
+
+  /**
+   * Batch toggle quarantine status
+   */
+  static async batchQuarantine(mediaIds: string[], isQuarantined: boolean) {
+    return await db.media.updateMany({
+      where: { id: { in: mediaIds } },
       data: { isQuarantined },
     });
   }
@@ -279,14 +309,18 @@ export class MediaService {
   }
 
   /**
-   * Virtual Folders: Retrieves folders for an owner
+   * Virtual Folders: Retrieves folders for an owner or all system folders for admin
    */
-  static async getFolders(ownerId: string, parentId: string | null = null) {
+  static async getFolders(ownerId?: string | null, parentId: string | null = null) {
+    const where: any = {
+      parentId,
+    };
+    if (ownerId) {
+      where.ownerId = ownerId;
+    }
+
     return await db.mediaFolder.findMany({
-      where: {
-        ownerId,
-        parentId,
-      },
+      where,
       orderBy: { name: "asc" },
       include: {
         _count: {
@@ -321,9 +355,14 @@ export class MediaService {
   /**
    * Virtual Folders: Deletes a folder and detaches its assets
    */
-  static async deleteFolder(folderId: string, ownerId: string) {
+  static async deleteFolder(folderId: string, ownerId: string, isAdmin: boolean = false) {
+    const where: any = { id: folderId };
+    if (!isAdmin) {
+      where.ownerId = ownerId;
+    }
+
     const folder = await db.mediaFolder.findFirst({
-      where: { id: folderId, ownerId },
+      where,
     });
 
     if (!folder) throw new Error("Folder not found.");
@@ -344,12 +383,16 @@ export class MediaService {
   /**
    * Move assets to a target folder
    */
-  static async moveMediaToFolder(mediaIds: string[], folderId: string | null, ownerId: string) {
+  static async moveMediaToFolder(mediaIds: string[], folderId: string | null, ownerId: string, isAdmin: boolean = false) {
+    const where: any = {
+      id: { in: mediaIds },
+    };
+    if (!isAdmin) {
+      where.ownerId = ownerId;
+    }
+
     return await db.media.updateMany({
-      where: {
-        id: { in: mediaIds },
-        ownerId,
-      },
+      where,
       data: { folderId },
     });
   }
