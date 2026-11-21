@@ -686,7 +686,7 @@
                 : 'justify-between px-3.5 py-2.5'} text-xs font-semibold rounded-2xl transition-all {isActive('/admin/settings') && page.url.searchParams.get('tab') !== 'users'
                 ? 'bg-slate-900 text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
-              title={isCollapsed ? "Site Settings" : undefined}
+              title={isCollapsed ? "Site Setting" : undefined}
             >
               <div class="flex items-center gap-3">
                 {#if isNavigatingTo('/admin/settings')}
@@ -695,7 +695,7 @@
                   <Settings class="h-4 w-4 shrink-0 {isActive('/admin/settings') && page.url.searchParams.get('tab') !== 'users' ? 'text-white' : 'text-slate-400'}" />
                 {/if}
                 {#if !isCollapsed}
-                  <span>Site & Settings</span>
+                  <span>Site Setting</span>
                 {/if}
               </div>
               {#if !isCollapsed && isActive('/admin/settings') && page.url.searchParams.get('tab') !== 'users'}
@@ -705,7 +705,7 @@
 
             {#if isCollapsed && hoveredItem === "settings"}
               <div class="absolute left-16 top-0 z-50 bg-slate-900 text-white text-xs font-bold py-1.5 px-3 rounded-xl shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
-                Site & Directory Settings
+                Site Setting
               </div>
             {/if}
           </div>
@@ -801,7 +801,7 @@
       <a href="/admin/imports" onclick={() => (mobileDrawerOpen = false)} class="block px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50">CSV Import Hub</a>
       <a href="/admin/media" onclick={() => (mobileDrawerOpen = false)} class="block px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50">Media Library</a>
       <a href="/admin/settings?tab=users" onclick={() => (mobileDrawerOpen = false)} class="block px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50">User</a>
-      <a href="/admin/settings" onclick={() => (mobileDrawerOpen = false)} class="block px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50">Settings</a>
+      <a href="/admin/settings" onclick={() => (mobileDrawerOpen = false)} class="block px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50">Site Setting</a>
     </div>
   {/if}
 

@@ -42,7 +42,7 @@ export const ADMIN_NAV_CONFIG: NavItem[] = [
   { label: "CSV Import / Export", href: "/admin/imports" },
   { label: "Media Library", href: "/admin/media" },
   { label: "Directory Analytics", href: "/admin/analytics" },
-  { label: "Site & Settings", href: "/admin/settings" },
+  { label: "Site Setting", href: "/admin/settings" },
 ];
 
 export function resolveOpenSections(pathname: string): Record<string, boolean> {
