@@ -44,7 +44,7 @@ Plans:
 **Plans:** 1/1 plans planned  
 
 Plans:
-- [ ] 04-modernized-listing-bento-ux/PLAN.md
+- [x] 04-modernized-listing-bento-ux/PLAN.md
 
 ---
 
