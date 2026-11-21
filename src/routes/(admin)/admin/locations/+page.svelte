@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { enhance } from "$app/forms";
+  import { invalidateAll } from "$app/navigation";
   import type { PageData } from "./$types";
   import {
     MapPin,
@@ -8,12 +10,26 @@
     Layers,
     Compass,
     ExternalLink,
-    Edit
+    Edit,
+    Trash2,
+    Check,
+    CheckCircle2
   } from "lucide-svelte";
+  import { createBulkSelection } from "$lib/components/ui/bulk-select/bulk-select.svelte";
+  import BulkSelectCheckbox from "$lib/components/ui/bulk-select/BulkSelectCheckbox.svelte";
+  import BulkSelectToolbar from "$lib/components/ui/bulk-select/BulkSelectToolbar.svelte";
+  import BulkConfirmModal from "$lib/components/ui/bulk-select/BulkConfirmModal.svelte";
+  import Pagination from "$lib/components/ui/Pagination.svelte";
 
   let { data }: { data: PageData } = $props();
 
-  let searchQuery = $state("");
+  const selection = createBulkSelection();
+  let visibleIds = $derived(data.locations.map((l) => l.id));
+
+  let showDeleteModal = $state(false);
+  let isProcessing = $state(false);
+  let feedbackMessage = $state("");
+  let searchQuery = $state(data.query || "");
 
   let filteredLocations = $derived(
     data.locations.filter((loc) =>
@@ -22,6 +38,29 @@
       (loc.parent?.name && loc.parent.name.toLowerCase().includes(searchQuery.toLowerCase()))
     )
   );
+
+  async function handleBulkDelete() {
+    isProcessing = true;
+    const formData = new FormData();
+    formData.set("ids", JSON.stringify(selection.selectedArray));
+
+    try {
+      const response = await fetch("?/bulkDelete", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        showDeleteModal = false;
+        selection.deselectAll();
+        feedbackMessage = "Selected locations deleted successfully";
+        await invalidateAll();
+        setTimeout(() => (feedbackMessage = ""), 4000);
+      }
+    } finally {
+      isProcessing = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -29,6 +68,23 @@
 </svelte:head>
 
 <div class="space-y-6">
+  <!-- Feedback Banner -->
+  {#if feedbackMessage}
+    <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between shadow-xs animate-in fade-in">
+      <div class="flex items-center gap-2">
+        <Check class="h-4 w-4 text-emerald-600" />
+        <span>{feedbackMessage}</span>
+      </div>
+      <button
+        type="button"
+        class="text-xs text-emerald-600 hover:text-emerald-900 font-bold"
+        onclick={() => (feedbackMessage = "")}
+      >
+        Dismiss
+      </button>
+    </div>
+  {/if}
+
   <!-- Header with Add Action -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
@@ -96,15 +152,25 @@
   </div>
 
   <!-- Search Filter -->
-  <div class="bg-white rounded-2xl border border-slate-200/80 p-3 shadow-2xs flex items-center gap-2">
+  <form method="GET" class="bg-white rounded-2xl border border-slate-200/80 p-3 shadow-2xs flex items-center gap-2">
     <Search class="h-4 w-4 text-slate-400 ml-2 shrink-0" />
     <input
       type="text"
+      name="q"
       bind:value={searchQuery}
-      placeholder="Search locations by neighborhood name, slug or parent zone..."
+      placeholder="Search locations by neighborhood name, slug or parent zone (Press Enter to search all)..."
       class="w-full text-xs text-slate-900 placeholder:text-slate-400 focus:outline-hidden bg-transparent"
     />
-  </div>
+    {#if searchQuery}
+      <a
+        href="/admin/locations"
+        class="text-xs text-slate-400 hover:text-slate-600 font-bold px-2 py-1"
+        onclick={() => (searchQuery = "")}
+      >
+        Clear
+      </a>
+    {/if}
+  </form>
 
   <!-- Locations Table Card -->
   <div class="bg-white rounded-3xl border border-slate-200/80 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] overflow-hidden">
@@ -112,6 +178,14 @@
       <table class="w-full text-left text-xs text-slate-600 border-collapse">
         <thead>
           <tr class="bg-slate-50/75 border-b border-slate-200/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            <th class="py-3.5 px-4 w-12 text-center">
+              <BulkSelectCheckbox
+                checked={selection.isAllSelected(visibleIds)}
+                indeterminate={selection.isIndeterminate(visibleIds)}
+                ariaLabel="Select all locations on page"
+                onchange={() => selection.toggleAll(visibleIds)}
+              />
+            </th>
             <th class="py-3.5 px-5">Location Name</th>
             <th class="py-3.5 px-4">Slug</th>
             <th class="py-3.5 px-4">Parent Zone</th>
@@ -124,13 +198,28 @@
         <tbody class="divide-y divide-slate-100 font-medium">
           {#if filteredLocations.length === 0}
             <tr>
-              <td colspan="7" class="py-12 text-center text-slate-400 text-xs">
+              <td colspan="8" class="py-12 text-center text-slate-400 text-xs">
                 No locations match your search.
               </td>
             </tr>
           {:else}
-            {#each filteredLocations as location}
-              <tr class="hover:bg-slate-50/80 transition-colors">
+            {#each filteredLocations as location, index}
+              <tr
+                class="hover:bg-slate-50/80 transition-colors {selection.isSelected(location.id) ? 'bg-indigo-50/40' : ''}"
+              >
+                <td class="py-3.5 px-4 text-center">
+                  <BulkSelectCheckbox
+                    checked={selection.isSelected(location.id)}
+                    ariaLabel={`Select ${location.name}`}
+                    onchange={(e) => {
+                      selection.toggle(location.id, {
+                        range: (e as any).shiftKey,
+                        allIds: visibleIds,
+                        currentIndex: index,
+                      });
+                    }}
+                  />
+                </td>
                 <td class="py-3.5 px-5">
                   <div class="flex items-center gap-3">
                     <div class="h-8 w-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xs shrink-0">
@@ -204,5 +293,97 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination Controls -->
+    <Pagination
+      currentPage={data.page}
+      totalPages={data.totalPages}
+      totalItems={data.totalLocations}
+      pageSize={data.pageSize}
+      baseUrl="/admin/locations"
+      extraParams={{ q: data.query }}
+    />
   </div>
+
+  <!-- Bulk Selection Action Dock Toolbar -->
+  <BulkSelectToolbar
+    selectedCount={selection.selectedCount}
+    totalCount={visibleIds.length}
+    onClear={() => selection.deselectAll()}
+  >
+    {#snippet actions()}
+      <!-- Bulk Feature -->
+      <form
+        method="POST"
+        action="?/bulkFeature"
+        use:enhance={() => {
+          return async ({ result }) => {
+            if (result.type === "success") {
+              feedbackMessage = "Selected locations marked as featured";
+              selection.deselectAll();
+              await invalidateAll();
+              setTimeout(() => (feedbackMessage = ""), 4000);
+            }
+          };
+        }}
+      >
+        <input type="hidden" name="ids" value={JSON.stringify(selection.selectedArray)} />
+        <input type="hidden" name="featured" value="true" />
+        <button
+          type="submit"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+        >
+          <Sparkles class="h-3.5 w-3.5" />
+          <span>Feature All</span>
+        </button>
+      </form>
+
+      <!-- Bulk Unfeature -->
+      <form
+        method="POST"
+        action="?/bulkFeature"
+        use:enhance={() => {
+          return async ({ result }) => {
+            if (result.type === "success") {
+              feedbackMessage = "Selected locations unfeatured";
+              selection.deselectAll();
+              await invalidateAll();
+              setTimeout(() => (feedbackMessage = ""), 4000);
+            }
+          };
+        }}
+      >
+        <input type="hidden" name="ids" value={JSON.stringify(selection.selectedArray)} />
+        <input type="hidden" name="featured" value="false" />
+        <button
+          type="submit"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+        >
+          <Sparkles class="h-3.5 w-3.5 opacity-50" />
+          <span>Unfeature All</span>
+        </button>
+      </form>
+
+      <!-- Bulk Delete Trigger Button -->
+      <button
+        type="button"
+        onclick={() => (showDeleteModal = true)}
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+      >
+        <Trash2 class="h-3.5 w-3.5" />
+        <span>Delete Selected</span>
+      </button>
+    {/snippet}
+  </BulkSelectToolbar>
+
+  <!-- Bulk Delete Confirmation Safety Modal -->
+  <BulkConfirmModal
+    isOpen={showDeleteModal}
+    selectedCount={selection.selectedCount}
+    entityType="locations"
+    isDangerous={true}
+    isProcessing={isProcessing}
+    onclose={() => (showDeleteModal = false)}
+    onconfirm={handleBulkDelete}
+  />
 </div>
