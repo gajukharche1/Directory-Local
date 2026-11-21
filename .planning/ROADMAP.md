@@ -110,7 +110,7 @@ Plans:
 **Plans:** 1/1 plans planned  
 
 Plans:
-- [ ] 08-user-management-admin-privileges-collapsible-nav/PLAN.md
+- [x] 08-user-management-admin-privileges-collapsible-nav/PLAN.md
 
 ---
 
