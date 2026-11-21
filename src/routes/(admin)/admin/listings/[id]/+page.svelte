@@ -1029,7 +1029,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
         <div>
           <h2 class="text-sm font-bold text-foreground flex items-center gap-2">
-            <Search class="h-4 w-4 text-primary" /> 7. Search Engine Optimization (SEO & Meta Tags)
+            <Search class="h-4 w-4 text-primary" /> 8. Search Engine Optimization (SEO & Meta Tags)
           </h2>
           <p class="text-xs text-muted-foreground mt-0.5">
             Configure search engine title, meta description, and keywords for Google indexation
