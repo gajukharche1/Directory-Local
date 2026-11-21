@@ -1,165 +1,167 @@
-import { fail } from "@sveltejs/kit";
+import { fail, redirect } from "@sveltejs/kit";
 import type { PageServerLoad, Actions } from "./$types";
 import db from "$lib/db/client";
 import { ListingStatus } from "@prisma/client";
+import { parseOpeningHours } from "$lib/utils/opening-hours-parser";
+import { parseCsvText, detectDelimiter } from "$lib/utils/csv-parser";
 
-export const load: PageServerLoad = async () => {
-  return {};
+export const load: PageServerLoad = async ({ locals }) => {
+  if (!locals.user || (locals.user.role !== "admin" && locals.user.role !== "moderator")) {
+    throw redirect(303, "/login?redirectTo=/admin/imports");
+  }
+
+  const [totalListings, totalCategories, totalLocations] = await Promise.all([
+    db.listing.count().catch(() => 0),
+    db.category.count().catch(() => 0),
+    db.location.count().catch(() => 0),
+  ]);
+
+  return {
+    totalListings,
+    totalCategories,
+    totalLocations,
+  };
 };
 
-interface ImportRow {
-  title: string;
-  categorySlug?: string;
-  locationSlug?: string;
-  phone?: string;
-  whatsapp?: string;
-  email?: string;
-  website?: string;
-  address: string;
-  locality?: string;
-  landmark?: string;
-  description?: string;
-  priceRange?: number;
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 export const actions: Actions = {
-  batchImport: async ({ request }) => {
+  importListings: async ({ request, locals }) => {
+    if (!locals.user || (locals.user.role !== "admin" && locals.user.role !== "moderator")) {
+      return fail(403, { error: "Unauthorized access" });
+    }
+
     const formData = await request.formData();
-    const csvDataRaw = formData.get("csvData") as string;
+    const rawData = formData.get("csvData")?.toString().trim();
+    const statusOption = (formData.get("status")?.toString() || "draft") as ListingStatus;
 
-    if (!csvDataRaw || !csvDataRaw.trim()) {
-      return fail(400, { error: "Please provide CSV content to import." });
+    if (!rawData) {
+      return fail(400, { error: "Please provide CSV data to import." });
     }
 
-    let items: ImportRow[] = [];
-    try {
-      // Check if it was sent as pre-parsed JSON or raw CSV
-      if (csvDataRaw.trim().startsWith("[") && csvDataRaw.trim().endsWith("]")) {
-        items = JSON.parse(csvDataRaw);
-      } else {
-        // Simple CSV parser
-        const lines = csvDataRaw.split(/\r?\n/).filter((l) => l.trim().length > 0);
-        if (lines.length <= 1) {
-          return fail(400, { error: "CSV does not contain any data rows." });
-        }
-
-        const headers = lines[0]!.split(",").map((h) => h.trim().toLowerCase().replace(/['"]/g, ""));
-        for (let i = 1; i < lines.length; i++) {
-          const values = lines[i]!.split(",").map((v) => v.trim().replace(/^["']|["']$/g, ""));
-          const rowObj: any = {};
-          headers.forEach((h, idx) => {
-            rowObj[h] = values[idx] || "";
-          });
-
-          if (rowObj.title && rowObj.address) {
-            items.push({
-              title: rowObj.title,
-              categorySlug: rowObj.category || rowObj.categoryslug || "",
-              locationSlug: rowObj.location || rowObj.locationslug || "",
-              phone: rowObj.phone || "",
-              whatsapp: rowObj.whatsapp || "",
-              email: rowObj.email || "",
-              website: rowObj.website || "",
-              address: rowObj.address,
-              locality: rowObj.locality || "Local Business",
-              landmark: rowObj.landmark || "",
-              description: rowObj.description || "",
-              priceRange: rowObj.pricerange ? parseInt(rowObj.pricerange, 10) : 2,
-            });
-          }
-        }
+    let rows: any[] = [];
+    if (rawData.startsWith("[") && rawData.endsWith("]")) {
+      try {
+        rows = JSON.parse(rawData);
+      } catch {
+        return fail(400, { error: "Malformed JSON payload." });
       }
-    } catch (parseErr) {
-      return fail(400, { error: "Failed to parse CSV format." });
+    } else {
+      const delimiter = detectDelimiter(rawData);
+      const lines = parseCsvText(rawData, delimiter);
+      if (lines.length <= 1) {
+        return fail(400, { error: "CSV does not contain any data rows." });
+      }
+      const headers = lines[0]!.map((h) => h.toLowerCase().trim().replace(/['"_\s-]+/g, ""));
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i]!;
+        const obj: any = {};
+        headers.forEach((h, idx) => {
+          obj[h] = row[idx] || "";
+        });
+        rows.push(obj);
+      }
     }
 
-    if (items.length === 0) {
-      return fail(400, { error: "No valid rows found. Each row requires at least a title and address." });
+    if (rows.length === 0) {
+      return fail(400, { error: "No valid rows found to import." });
+    }
+
+    // Cache categories & locations by slug/name
+    const [allCategories, allLocations, defaultPlan] = await Promise.all([
+      db.category.findMany({ select: { id: true, slug: true, name: true } }),
+      db.location.findMany({ select: { id: true, slug: true, name: true } }),
+      db.pricingPlan.findFirst({ where: { isActive: true }, orderBy: { displayOrder: "asc" }, select: { id: true } }),
+    ]);
+
+    const catMap = new Map<string, string>();
+    for (const c of allCategories) {
+      catMap.set(c.slug.toLowerCase(), c.id);
+      catMap.set(c.name.toLowerCase(), c.id);
+    }
+
+    const locMap = new Map<string, string>();
+    for (const l of allLocations) {
+      locMap.set(l.slug.toLowerCase(), l.id);
+      locMap.set(l.name.toLowerCase(), l.id);
     }
 
     let importedCount = 0;
     const errors: string[] = [];
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i]!;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]!;
+      const title = (row.title || row.businessname || row.name || "").trim();
+      const address = (row.address || row.streetaddress || "").trim();
+
+      if (!title || !address) {
+        errors.push(`Row ${i + 1}: Missing title or address.`);
+        continue;
+      }
+
+      const locality = (row.locality || "Local Business").trim();
+      const phone = (row.phone || row.phonenumber || "").trim() || null;
+      const whatsapp = (row.whatsapp || row.whatsappnumber || "").trim() || null;
+      const email = (row.email || "").trim() || null;
+      const website = (row.website || "").trim() || null;
+      const description = (row.description || `Verified local business: ${title}`).trim();
+      const priceRange = row.pricerange ? Math.min(4, Math.max(1, parseInt(row.pricerange, 10))) : 2;
+
+      // Smart Opening Hours
+      const openingHours = parseOpeningHours(row.openinghours || row.hours || row.timings);
+
+      // Category and Location lookup
+      const catKey = (row.category || row.categoryslug || "").toLowerCase().trim();
+      const categoryId = catMap.get(catKey);
+
+      const locKey = (row.location || row.locationslug || "").toLowerCase().trim();
+      const locationId = locMap.get(locKey);
+
+      const baseSlug = generateSlug(title) || `listing-${Date.now()}`;
+      const uniqueSuffix = Math.random().toString(36).substring(2, 6);
+      const slug = `${baseSlug}-${uniqueSuffix}`;
+
       try {
-        if (!item.title?.trim() || !item.address?.trim()) {
-          errors.push(`Row ${i + 1}: Title and address are required.`);
-          continue;
-        }
-
-        const baseSlug = item.title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "");
-
-        let slug = baseSlug || `business-${Date.now()}`;
-        let suffix = 1;
-        while (await db.listing.findUnique({ where: { slug } })) {
-          slug = `${baseSlug}-${suffix++}`;
-        }
-
-        let category = item.categorySlug
-          ? await db.category.findUnique({ where: { slug: item.categorySlug } })
-          : null;
-        if (!category) {
-          category = await db.category.findFirst();
-        }
-
-        let location = item.locationSlug
-          ? await db.location.findUnique({ where: { slug: item.locationSlug } })
-          : null;
-        if (!location) {
-          location = await db.location.findFirst();
-        }
-
-        const listing = await db.listing.create({
+        await db.listing.create({
           data: {
+            title,
             slug,
-            title: item.title.trim(),
-            description:
-              item.description?.trim() ||
-              `<p>${item.title} is a verified business in your local area.</p>`,
-            status: ListingStatus.published,
-            publishedAt: new Date(),
-            address: item.address.trim(),
-            locality: item.locality?.trim() || "Local Business",
-            landmark: item.landmark?.trim() || null,
-            phone: item.phone?.trim() || null,
-            whatsapp: item.whatsapp?.trim() || null,
-            email: item.email?.trim() || null,
-            website: item.website?.trim() || null,
-            priceRange:
-              item.priceRange && item.priceRange >= 1 && item.priceRange <= 4
-                ? item.priceRange
-                : 2,
+            description,
+            address,
+            locality,
+            phone,
+            whatsapp,
+            email,
+            website,
+            priceRange,
+            status: Object.values(ListingStatus).includes(statusOption) ? statusOption : ListingStatus.draft,
+            ownerId: locals.user.id,
+            planId: defaultPlan?.id || null,
+            openingHours: openingHours as any,
+            ...(categoryId
+              ? {
+                  categories: {
+                    create: [{ categoryId, isPrimary: true }],
+                  },
+                }
+              : {}),
+            ...(locationId
+              ? {
+                  locations: {
+                    create: [{ locationId, isPrimary: true }],
+                  },
+                }
+              : {}),
           },
         });
-
-        if (category) {
-          await db.listingCategory.create({
-            data: {
-              listingId: listing.id,
-              categoryId: category.id,
-            },
-          });
-        }
-
-        if (location) {
-          await db.listingLocation.create({
-            data: {
-              listingId: listing.id,
-              locationId: location.id,
-              isPrimary: true,
-            },
-          });
-        }
-
         importedCount++;
-      } catch (err) {
-        errors.push(
-          `Row ${i + 1} (${item.title}): ${err instanceof Error ? err.message : "Database error"}`
-        );
+      } catch (err: any) {
+        errors.push(`Row ${i + 1} (${title}): ${err?.message || "Failed to save listing"}`);
       }
     }
 
@@ -167,7 +169,210 @@ export const actions: Actions = {
       success: true,
       importedCount,
       failedCount: errors.length,
-      errors,
+      errors: errors.slice(0, 15),
+      entityType: "listings",
     };
+  },
+
+  importCategories: async ({ request, locals }) => {
+    if (!locals.user || locals.user.role !== "admin") {
+      return fail(403, { error: "Admin role required to import categories." });
+    }
+
+    const formData = await request.formData();
+    const rawData = formData.get("csvData")?.toString().trim();
+
+    if (!rawData) {
+      return fail(400, { error: "Please provide CSV data for categories." });
+    }
+
+    let rows: any[] = [];
+    if (rawData.startsWith("[") && rawData.endsWith("]")) {
+      try {
+        rows = JSON.parse(rawData);
+      } catch {
+        return fail(400, { error: "Malformed JSON payload." });
+      }
+    } else {
+      const delimiter = detectDelimiter(rawData);
+      const lines = parseCsvText(rawData, delimiter);
+      if (lines.length <= 1) {
+        return fail(400, { error: "CSV does not contain data rows." });
+      }
+      const headers = lines[0]!.map((h) => h.toLowerCase().trim().replace(/['"_\s-]+/g, ""));
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i]!;
+        const obj: any = {};
+        headers.forEach((h, idx) => {
+          obj[h] = row[idx] || "";
+        });
+        rows.push(obj);
+      }
+    }
+
+    const allCategories = await db.category.findMany({ select: { id: true, slug: true, name: true } });
+    const catMap = new Map<string, string>();
+    for (const c of allCategories) {
+      catMap.set(c.slug.toLowerCase(), c.id);
+      catMap.set(c.name.toLowerCase(), c.id);
+    }
+
+    let importedCount = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]!;
+      const name = (row.name || row.title || "").trim();
+      if (!name) {
+        errors.push(`Row ${i + 1}: Category name is required.`);
+        continue;
+      }
+
+      let slug = (row.slug || generateSlug(name)).trim();
+      if (!slug) slug = `cat-${Date.now()}`;
+
+      // Check if slug already exists
+      const existing = await db.category.findUnique({ where: { slug } });
+      if (existing) {
+        slug = `${slug}-${Math.random().toString(36).substring(2, 5)}`;
+      }
+
+      const parentKey = (row.parent || row.parentslug || "").toLowerCase().trim();
+      const parentId = parentKey ? catMap.get(parentKey) || null : null;
+      const description = (row.description || "").trim() || null;
+      const featuredOnHome = row.featured === "true" || row.featuredonhome === "true" || row.featured === "1";
+      const sortOrder = row.sortorder ? parseInt(row.sortorder, 10) : 0;
+
+      try {
+        const created = await db.category.create({
+          data: {
+            name,
+            slug,
+            description,
+            parentId,
+            featuredOnHome,
+            sortOrder,
+          },
+        });
+        catMap.set(created.slug.toLowerCase(), created.id);
+        catMap.set(created.name.toLowerCase(), created.id);
+        importedCount++;
+      } catch (err: any) {
+        errors.push(`Row ${i + 1} (${name}): ${err?.message || "Failed to create category"}`);
+      }
+    }
+
+    return {
+      success: true,
+      importedCount,
+      failedCount: errors.length,
+      errors: errors.slice(0, 15),
+      entityType: "categories",
+    };
+  },
+
+  importLocations: async ({ request, locals }) => {
+    if (!locals.user || locals.user.role !== "admin") {
+      return fail(403, { error: "Admin role required to import locations." });
+    }
+
+    const formData = await request.formData();
+    const rawData = formData.get("csvData")?.toString().trim();
+
+    if (!rawData) {
+      return fail(400, { error: "Please provide CSV data for locations." });
+    }
+
+    let rows: any[] = [];
+    if (rawData.startsWith("[") && rawData.endsWith("]")) {
+      try {
+        rows = JSON.parse(rawData);
+      } catch {
+        return fail(400, { error: "Malformed JSON payload." });
+      }
+    } else {
+      const delimiter = detectDelimiter(rawData);
+      const lines = parseCsvText(rawData, delimiter);
+      if (lines.length <= 1) {
+        return fail(400, { error: "CSV does not contain data rows." });
+      }
+      const headers = lines[0]!.map((h) => h.toLowerCase().trim().replace(/['"_\s-]+/g, ""));
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i]!;
+        const obj: any = {};
+        headers.forEach((h, idx) => {
+          obj[h] = row[idx] || "";
+        });
+        rows.push(obj);
+      }
+    }
+
+    const allLocations = await db.location.findMany({ select: { id: true, slug: true, name: true } });
+    const locMap = new Map<string, string>();
+    for (const l of allLocations) {
+      locMap.set(l.slug.toLowerCase(), l.id);
+      locMap.set(l.name.toLowerCase(), l.id);
+    }
+
+    let importedCount = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]!;
+      const name = (row.name || row.title || "").trim();
+      if (!name) {
+        errors.push(`Row ${i + 1}: Location name is required.`);
+        continue;
+      }
+
+      let slug = (row.slug || generateSlug(name)).trim();
+      if (!slug) slug = `loc-${Date.now()}`;
+
+      const existing = await db.location.findUnique({ where: { slug } });
+      if (existing) {
+        slug = `${slug}-${Math.random().toString(36).substring(2, 5)}`;
+      }
+
+      const parentKey = (row.parent || row.parentslug || "").toLowerCase().trim();
+      const parentId = parentKey ? locMap.get(parentKey) || null : null;
+      const description = (row.description || "").trim() || null;
+      const featured = row.featured === "true" || row.featured === "1";
+      const sortOrder = row.sortorder ? parseInt(row.sortorder, 10) : 0;
+      const latitude = row.latitude && !isNaN(Number(row.latitude)) ? Number(row.latitude) : null;
+      const longitude = row.longitude && !isNaN(Number(row.longitude)) ? Number(row.longitude) : null;
+
+      try {
+        const created = await db.location.create({
+          data: {
+            name,
+            slug,
+            description,
+            parentId,
+            featured,
+            sortOrder,
+            latitude,
+            longitude,
+          },
+        });
+        locMap.set(created.slug.toLowerCase(), created.id);
+        locMap.set(created.name.toLowerCase(), created.id);
+        importedCount++;
+      } catch (err: any) {
+        errors.push(`Row ${i + 1} (${name}): ${err?.message || "Failed to create location"}`);
+      }
+    }
+
+    return {
+      success: true,
+      importedCount,
+      failedCount: errors.length,
+      errors: errors.slice(0, 15),
+      entityType: "locations",
+    };
+  },
+
+  // Backward compatibility alias
+  batchImport: async (event) => {
+    return actions.importListings(event);
   },
 };

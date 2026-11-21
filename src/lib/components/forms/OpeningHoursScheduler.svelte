@@ -30,6 +30,12 @@
   let quickParseInput = $state("");
   let parseFeedback = $state("");
 
+  $effect(() => {
+    if (value !== undefined) {
+      schedule = parseOpeningHours(value);
+    }
+  });
+
   // 30-minute interval options
   const TIME_OPTIONS: string[] = [];
   for (let h = 0; h < 24; h++) {
