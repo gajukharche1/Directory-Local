@@ -20,7 +20,10 @@
     Check,
     Plus,
     FolderTree,
-    X
+    X,
+    FileText,
+    Archive,
+    XCircle
   } from "lucide-svelte";
   import { createBulkSelection } from "$lib/components/ui/bulk-select/bulk-select.svelte";
   import BulkSelectCheckbox from "$lib/components/ui/bulk-select/BulkSelectCheckbox.svelte";
@@ -417,29 +420,7 @@
     onClear={() => selection.deselectAll()}
   >
     {#snippet actions()}
-      <!-- Assign Category Button -->
-      <button
-        type="button"
-        onclick={() => (showCategoryModal = true)}
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
-        title="Assign Category to selected listings"
-      >
-        <FolderTree class="h-3.5 w-3.5" />
-        <span>Categories</span>
-      </button>
-
-      <!-- Assign Location Button -->
-      <button
-        type="button"
-        onclick={() => (showLocationModal = true)}
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
-        title="Assign Location to selected listings"
-      >
-        <MapPin class="h-3.5 w-3.5" />
-        <span>Location</span>
-      </button>
-
-      <!-- Bulk Mark Published -->
+      <!-- Publish Action (Green Pill) -->
       <form
         method="POST"
         action="?/bulkUpdateStatus"
@@ -458,21 +439,21 @@
         <input type="hidden" name="status" value="published" />
         <button
           type="submit"
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition-colors shadow-2xs cursor-pointer"
         >
           <CheckCircle2 class="h-3.5 w-3.5" />
-          <span>Publish All</span>
+          <span>Publish</span>
         </button>
       </form>
 
-      <!-- Bulk Mark Pending -->
+      <!-- Draft Action (White Pill) -->
       <form
         method="POST"
         action="?/bulkUpdateStatus"
         use:enhance={() => {
           return async ({ result }) => {
             if (result.type === "success") {
-              feedbackMessage = "Selected listings set to pending review";
+              feedbackMessage = "Selected listings moved to draft";
               selection.deselectAll();
               await invalidateAll();
               setTimeout(() => (feedbackMessage = ""), 4000);
@@ -481,24 +462,98 @@
         }}
       >
         <input type="hidden" name="ids" value={JSON.stringify(selection.selectedArray)} />
-        <input type="hidden" name="status" value="pending_review" />
+        <input type="hidden" name="status" value="draft" />
         <button
           type="submit"
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
         >
-          <Clock class="h-3.5 w-3.5" />
-          <span>Pending</span>
+          <FileText class="h-3.5 w-3.5 text-slate-500" />
+          <span>Draft</span>
         </button>
       </form>
 
-      <!-- Bulk Delete Trigger Button -->
+      <!-- Archive Action (White Pill) -->
+      <form
+        method="POST"
+        action="?/bulkUpdateStatus"
+        use:enhance={() => {
+          return async ({ result }) => {
+            if (result.type === "success") {
+              feedbackMessage = "Selected listings archived";
+              selection.deselectAll();
+              await invalidateAll();
+              setTimeout(() => (feedbackMessage = ""), 4000);
+            }
+          };
+        }}
+      >
+        <input type="hidden" name="ids" value={JSON.stringify(selection.selectedArray)} />
+        <input type="hidden" name="status" value="archived" />
+        <button
+          type="submit"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
+        >
+          <Archive class="h-3.5 w-3.5 text-slate-500" />
+          <span>Archive</span>
+        </button>
+      </form>
+
+      <!-- Reject Action (Soft Red Pill) -->
+      <form
+        method="POST"
+        action="?/bulkUpdateStatus"
+        use:enhance={() => {
+          return async ({ result }) => {
+            if (result.type === "success") {
+              feedbackMessage = "Selected listings marked as rejected";
+              selection.deselectAll();
+              await invalidateAll();
+              setTimeout(() => (feedbackMessage = ""), 4000);
+            }
+          };
+        }}
+      >
+        <input type="hidden" name="ids" value={JSON.stringify(selection.selectedArray)} />
+        <input type="hidden" name="status" value="rejected" />
+        <button
+          type="submit"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-medium text-xs transition-colors cursor-pointer"
+        >
+          <XCircle class="h-3.5 w-3.5 text-rose-500" />
+          <span>Reject</span>
+        </button>
+      </form>
+
+      <!-- Assign Category Button (White Pill) -->
+      <button
+        type="button"
+        onclick={() => (showCategoryModal = true)}
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
+        title="Assign Category to selected listings"
+      >
+        <FolderTree class="h-3.5 w-3.5 text-indigo-500" />
+        <span>Categories</span>
+      </button>
+
+      <!-- Assign Location Button (White Pill) -->
+      <button
+        type="button"
+        onclick={() => (showLocationModal = true)}
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
+        title="Assign Location to selected listings"
+      >
+        <MapPin class="h-3.5 w-3.5 text-teal-600" />
+        <span>Location</span>
+      </button>
+
+      <!-- Delete Action (Solid Red Pill) -->
       <button
         type="button"
         onclick={() => (showDeleteModal = true)}
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white font-medium text-xs transition-colors shadow-2xs cursor-pointer"
       >
         <Trash2 class="h-3.5 w-3.5" />
-        <span>Delete Selected</span>
+        <span>Delete</span>
       </button>
     {/snippet}
   </BulkSelectToolbar>

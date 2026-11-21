@@ -330,7 +330,7 @@
         <input type="hidden" name="featured" value="true" />
         <button
           type="submit"
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-medium text-xs transition-colors shadow-2xs cursor-pointer"
         >
           <Sparkles class="h-3.5 w-3.5" />
           <span>Feature on Home</span>
@@ -356,9 +356,9 @@
         <input type="hidden" name="featured" value="false" />
         <button
           type="submit"
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
         >
-          <Sparkles class="h-3.5 w-3.5 opacity-50" />
+          <Sparkles class="h-3.5 w-3.5 text-slate-400" />
           <span>Unfeature</span>
         </button>
       </form>
@@ -367,10 +367,10 @@
       <button
         type="button"
         onclick={() => (showDeleteModal = true)}
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white font-medium text-xs transition-colors shadow-2xs cursor-pointer"
       >
         <Trash2 class="h-3.5 w-3.5" />
-        <span>Delete Selected</span>
+        <span>Delete</span>
       </button>
     {/snippet}
   </BulkSelectToolbar>
