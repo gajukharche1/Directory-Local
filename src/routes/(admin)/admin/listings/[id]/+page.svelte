@@ -927,103 +927,6 @@
       </div>
     </div>
 
-    <!-- Section 7: ⚙️ Administrative Controls & Monetization -->
-    <div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xs space-y-5">
-      <div class="flex items-center justify-between pb-3 border-b border-border/60">
-        <h2 class="text-sm font-bold text-foreground flex items-center gap-2">
-          <ShieldCheck class="h-4 w-4 text-primary" /> 7. Administrative Controls & Monetization
-        </h2>
-        <span class="text-[11px] text-muted-foreground font-medium">Step 7 of 8</span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Status -->
-        <div>
-          <label for="adminStatus" class="block text-xs font-bold text-foreground mb-1">
-            Publication Status
-          </label>
-          <select
-            id="adminStatus"
-            name="status"
-            bind:value={status}
-            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold uppercase outline-none focus:border-primary"
-          >
-            <option value="published">Published</option>
-            <option value="pending_review">Pending Review</option>
-            <option value="draft">Draft</option>
-            <option value="rejected">Rejected</option>
-            <option value="archived">Archived</option>
-          </select>
-        </div>
-
-        <!-- Assigned Owner -->
-        <div>
-          <label for="adminOwner" class="block text-xs font-semibold text-foreground mb-1">
-            Assigned Business Owner
-          </label>
-          <select
-            id="adminOwner"
-            name="ownerId"
-            bind:value={ownerId}
-            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary"
-          >
-            <option value="unassigned">— Unclaimed / No Owner —</option>
-            {#each owners as u (u.id)}
-              <option value={u.id}>{u.name} ({u.email})</option>
-            {/each}
-          </select>
-        </div>
-
-        <!-- Subscription Plan -->
-        <div>
-          <label for="adminPlan" class="block text-xs font-semibold text-foreground mb-1">
-            Subscription Pricing Plan
-          </label>
-          <select
-            id="adminPlan"
-            name="planId"
-            bind:value={planId}
-            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary font-semibold"
-          >
-            <option value="none">Standard Free Directory</option>
-            {#each pricingPlans as plan (plan.id)}
-              <option value={plan.id}>{plan.name} (Priority {plan.searchPriority})</option>
-            {/each}
-          </select>
-        </div>
-
-        <!-- Featured Spotlight -->
-        <div class="flex items-center gap-3 pt-2">
-          <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-foreground">
-            <input
-              type="checkbox"
-              name="featured"
-              value="true"
-              bind:checked={featured}
-              class="h-4 w-4 rounded border-border text-primary"
-            />
-            <span class="inline-flex items-center gap-1 text-amber-600">
-              <Sparkles class="h-3.5 w-3.5" /> Featured Spotlight
-            </span>
-          </label>
-        </div>
-
-        <!-- Priority Boost -->
-        <div>
-          <label for="adminPriority" class="block text-xs font-semibold text-foreground mb-1">
-            Search Priority Boost (0-100)
-          </label>
-          <input
-            id="adminPriority"
-            type="number"
-            name="priority"
-            bind:value={priority}
-            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono outline-none focus:border-primary"
-          />
-        </div>
-      </div>
-    </div>
-
     <!-- Section 8: 🔍 Search Engine Optimization (SEO & Meta Tags) -->
     <div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xs space-y-5">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
@@ -1235,6 +1138,110 @@
             </button>
           </div>
         {/each}
+      </div>
+    </div>
+
+    <!-- ⚙️ Administrative Controls & Monetization -->
+    <div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xs space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-border/60">
+        <h2 class="text-sm font-bold text-foreground flex items-center gap-2">
+          <ShieldCheck class="h-4 w-4 text-primary" /> Administrative Controls & Monetization
+        </h2>
+        <span class="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-950 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+          Admin Privilege
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Status -->
+        <div>
+          <label for="adminStatus" class="block text-xs font-bold text-foreground mb-1">
+            Publication Status
+          </label>
+          <select
+            id="adminStatus"
+            name="status"
+            form="adminListingEditForm"
+            bind:value={status}
+            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold uppercase outline-none focus:border-primary"
+          >
+            <option value="published">Published</option>
+            <option value="pending_review">Pending Review</option>
+            <option value="draft">Draft</option>
+            <option value="rejected">Rejected</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+
+        <!-- Assigned Owner -->
+        <div>
+          <label for="adminOwner" class="block text-xs font-semibold text-foreground mb-1">
+            Assigned Business Owner
+          </label>
+          <select
+            id="adminOwner"
+            name="ownerId"
+            form="adminListingEditForm"
+            bind:value={ownerId}
+            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary"
+          >
+            <option value="unassigned">— Unclaimed / No Owner —</option>
+            {#each owners as u (u.id)}
+              <option value={u.id}>{u.name} ({u.email})</option>
+            {/each}
+          </select>
+        </div>
+
+        <!-- Subscription Plan -->
+        <div>
+          <label for="adminPlan" class="block text-xs font-semibold text-foreground mb-1">
+            Subscription Pricing Plan
+          </label>
+          <select
+            id="adminPlan"
+            name="planId"
+            form="adminListingEditForm"
+            bind:value={planId}
+            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary font-semibold"
+          >
+            <option value="none">Standard Free Directory</option>
+            {#each pricingPlans as plan (plan.id)}
+              <option value={plan.id}>{plan.name} (Priority {plan.searchPriority})</option>
+            {/each}
+          </select>
+        </div>
+
+        <!-- Featured Spotlight -->
+        <div class="flex items-center gap-3 pt-2">
+          <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-foreground">
+            <input
+              type="checkbox"
+              name="featured"
+              form="adminListingEditForm"
+              value="true"
+              bind:checked={featured}
+              class="h-4 w-4 rounded border-border text-primary"
+            />
+            <span class="inline-flex items-center gap-1 text-amber-600">
+              <Sparkles class="h-3.5 w-3.5" /> Featured Spotlight
+            </span>
+          </label>
+        </div>
+
+        <!-- Priority Boost -->
+        <div>
+          <label for="adminPriority" class="block text-xs font-semibold text-foreground mb-1">
+            Search Priority Boost (0-100)
+          </label>
+          <input
+            id="adminPriority"
+            type="number"
+            name="priority"
+            form="adminListingEditForm"
+            bind:value={priority}
+            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono outline-none focus:border-primary"
+          />
+        </div>
       </div>
     </div>
   </form>
