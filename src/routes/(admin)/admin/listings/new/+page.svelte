@@ -14,6 +14,7 @@
     ShieldCheck,
     Check
   } from "lucide-svelte";
+  import OpeningHoursScheduler from "$lib/components/forms/OpeningHoursScheduler.svelte";
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -198,6 +199,11 @@
           class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all font-medium resize-none"
         ></textarea>
       </div>
+    </div>
+
+    <!-- Section 3: Operating Hours -->
+    <div class="space-y-4">
+      <OpeningHoursScheduler />
     </div>
 
     <!-- Submit Action Bar -->

@@ -56,6 +56,15 @@ export const actions: Actions = {
     const locality = formData.get("locality")?.toString().trim() || "Pimple Saudagar";
     const planId = formData.get("planId")?.toString() || null;
     const ownerId = formData.get("ownerId")?.toString() || locals.user.id;
+    const openingHoursJson = formData.get("openingHours")?.toString();
+    let openingHours = undefined;
+    if (openingHoursJson) {
+      try {
+        openingHours = JSON.parse(openingHoursJson);
+      } catch {
+        // Keep undefined
+      }
+    }
 
     if (!title) {
       return fail(400, { error: "Listing title is required" });
@@ -93,6 +102,7 @@ export const actions: Actions = {
           status: ListingStatus.draft,
           ownerId: ownerId,
           planId: effectivePlanId,
+          openingHours: openingHours || undefined,
           ...(categoryId
             ? {
                 categories: {

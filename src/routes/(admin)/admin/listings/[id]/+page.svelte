@@ -36,6 +36,7 @@
   } from "lucide-svelte";
   import MediaPickerModal from "$lib/components/media/MediaPickerModal.svelte";
   import MediaDropzone from "$lib/components/media/MediaDropzone.svelte";
+  import OpeningHoursScheduler from "$lib/components/forms/OpeningHoursScheduler.svelte";
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -108,44 +109,6 @@
     } else {
       selectedAmenities = [...selectedAmenities, am];
     }
-  }
-
-  // Operating Hours
-  const daysOfWeek = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
-  let rawHours = data.listing.openingHours || {};
-  let schedule = $state<Record<string, { open: string; close: string; closed: boolean }>>({
-    monday: { open: rawHours.monday?.open || "09:00", close: rawHours.monday?.close || "21:00", closed: Boolean(rawHours.monday?.closed) },
-    tuesday: { open: rawHours.tuesday?.open || "09:00", close: rawHours.tuesday?.close || "21:00", closed: Boolean(rawHours.tuesday?.closed) },
-    wednesday: { open: rawHours.wednesday?.open || "09:00", close: rawHours.wednesday?.close || "21:00", closed: Boolean(rawHours.wednesday?.closed) },
-    thursday: { open: rawHours.thursday?.open || "09:00", close: rawHours.thursday?.close || "21:00", closed: Boolean(rawHours.thursday?.closed) },
-    friday: { open: rawHours.friday?.open || "09:00", close: rawHours.friday?.close || "21:00", closed: Boolean(rawHours.friday?.closed) },
-    saturday: { open: rawHours.saturday?.open || "09:00", close: rawHours.saturday?.close || "21:00", closed: Boolean(rawHours.saturday?.closed) },
-    sunday: { open: rawHours.sunday?.open || "10:00", close: rawHours.sunday?.close || "20:00", closed: Boolean(rawHours.sunday?.closed) },
-  });
-
-  function applyPreset(preset: "all9to9" | "monSat10to8" | "24x7") {
-    if (preset === "all9to9") {
-      daysOfWeek.forEach((d) => {
-        schedule[d] = { open: "09:00", close: "21:00", closed: false };
-      });
-    } else if (preset === "monSat10to8") {
-      daysOfWeek.forEach((d) => {
-        schedule[d] = d === "sunday"
-          ? { open: "10:00", close: "18:00", closed: true }
-          : { open: "10:00", close: "20:00", closed: false };
-      });
-    } else if (preset === "24x7") {
-      daysOfWeek.forEach((d) => {
-        schedule[d] = { open: "00:00", close: "23:59", closed: false };
-      });
-    }
-  }
-
-  function copyMonToAll() {
-    const mon = schedule.monday;
-    daysOfWeek.forEach((d) => {
-      schedule[d] = { ...mon };
-    });
   }
 
   // SEO & Meta Tags
@@ -365,7 +328,6 @@
     class="space-y-6"
   >
     <!-- Hidden JSON Payloads -->
-    <input type="hidden" name="openingHours" value={JSON.stringify(schedule)} />
     <input
       type="hidden"
       name="customSections"
@@ -797,88 +759,7 @@
     </div>
 
     <!-- Section 5: 🕒 Operating Hours & Schedule -->
-    <div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xs space-y-5">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
-        <div>
-          <h2 class="text-sm font-bold text-foreground flex items-center gap-2">
-            <Clock class="h-4 w-4 text-primary" /> 5. Operating Hours & Schedule
-          </h2>
-          <p class="text-xs text-muted-foreground mt-0.5">
-            Configure open timings to power the live timetable badge on public storefronts
-          </p>
-        </div>
-
-        <!-- Presets -->
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <button
-            type="button"
-            class="px-2.5 py-1 rounded-lg border border-border bg-muted/30 hover:bg-muted text-[11px] font-medium text-foreground cursor-pointer"
-            onclick={() => applyPreset("all9to9")}
-          >
-            All Days 9-9
-          </button>
-          <button
-            type="button"
-            class="px-2.5 py-1 rounded-lg border border-border bg-muted/30 hover:bg-muted text-[11px] font-medium text-foreground cursor-pointer"
-            onclick={() => applyPreset("monSat10to8")}
-          >
-            Mon-Sat 10-8
-          </button>
-          <button
-            type="button"
-            class="px-2.5 py-1 rounded-lg border border-border bg-muted/30 hover:bg-muted text-[11px] font-medium text-foreground cursor-pointer"
-            onclick={() => applyPreset("24x7")}
-          >
-            24x7 Open
-          </button>
-          <button
-            type="button"
-            class="px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[11px] font-semibold cursor-pointer"
-            onclick={copyMonToAll}
-          >
-            Copy Mon to All
-          </button>
-        </div>
-      </div>
-
-      <div class="space-y-2">
-        {#each daysOfWeek as day}
-          <div class="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted/20 text-xs gap-3">
-            <div class="w-28 font-bold capitalize text-foreground">{day}</div>
-
-            <button
-              type="button"
-              class={`px-3 py-1 rounded-full text-[11px] font-bold uppercase transition-colors cursor-pointer ${
-                schedule[day].closed
-                  ? "bg-rose-500/15 text-rose-600"
-                  : "bg-emerald-500/15 text-emerald-600"
-              }`}
-              onclick={() => (schedule[day].closed = !schedule[day].closed)}
-            >
-              {schedule[day].closed ? "Closed" : "Open"}
-            </button>
-
-            {#if !schedule[day].closed}
-              <div class="flex items-center gap-2 font-mono">
-                <input
-                  type="time"
-                  bind:value={schedule[day].open}
-                  class="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none"
-                />
-                <span class="text-muted-foreground">to</span>
-                <input
-                  type="time"
-                  bind:value={schedule[day].close}
-                  class="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none"
-                />
-              </div>
-            {:else}
-              <span class="text-muted-foreground font-mono italic">Weekly Off / Closed</span>
-            {/if}
-          </div>
-        {/each}
-      </div>
-    </div>
+    <OpeningHoursScheduler value={data.listing.openingHours} />
 
     <!-- Section 6: 📲 Mobile-Tasked Conversion Actions (CTA Customizer) -->
     <div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xs space-y-5">
