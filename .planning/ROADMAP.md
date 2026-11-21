@@ -123,7 +123,7 @@ Plans:
 **Plans:** 1/1 plans planned  
 
 Plans:
-- [ ] 09-admin-dashboard-site-settings/PLAN.md
+- [x] 09-admin-dashboard-site-settings/PLAN.md
 
 ---
 
