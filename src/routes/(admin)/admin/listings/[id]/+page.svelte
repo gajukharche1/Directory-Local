@@ -1333,17 +1333,17 @@
     {/if}
   </div>
 
-  <!-- Sticky Bottom Save Dock -->
-  <div class="fixed bottom-0 inset-x-0 z-40 bg-card/95 backdrop-blur-md border-t border-border py-2 px-4 shadow-xl">
-    <div class="max-w-6xl mx-auto w-full flex items-center justify-between">
-      <div class="text-xs text-muted-foreground flex items-center gap-2">
-        <span>Editing</span>
-        <strong class="text-foreground">{listing.title}</strong>
-        <span class="text-muted-foreground/40 hidden sm:inline">•</span>
-        <span class="text-emerald-600 font-semibold hidden sm:inline">Ready to save</span>
+  <!-- Sticky Bottom Save Dock (Floating Half-Width Capsule) -->
+  <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] sm:w-2/3 md:w-1/2 max-w-2xl bg-card/95 backdrop-blur-md border border-border/80 py-2 px-4 rounded-2xl shadow-2xl">
+    <div class="w-full flex items-center justify-between gap-3">
+      <div class="text-xs text-muted-foreground flex items-center gap-2 min-w-0">
+        <span class="shrink-0">Editing</span>
+        <strong class="text-foreground truncate max-w-[140px] sm:max-w-[220px]">{listing.title}</strong>
+        <span class="text-muted-foreground/40 hidden sm:inline shrink-0">•</span>
+        <span class="text-emerald-600 font-semibold hidden sm:inline shrink-0">Ready</span>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 shrink-0">
         <a
           href="/admin/listings"
           class="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
