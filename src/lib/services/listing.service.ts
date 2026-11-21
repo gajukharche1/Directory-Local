@@ -264,6 +264,10 @@ export class ListingService {
         ...(input.openingHours !== undefined && { openingHours: input.openingHours ?? Prisma.DbNull }),
         ...(input.amenities !== undefined && { amenities: input.amenities }),
         ...(input.socialLinks !== undefined && { socialLinks: input.socialLinks ?? Prisma.DbNull }),
+        ...(input.tagline !== undefined && { tagline: input.tagline ? stripHtml(input.tagline) : null }),
+        ...(input.seoTitle !== undefined && { seoTitle: input.seoTitle ? stripHtml(input.seoTitle) : null }),
+        ...(input.seoDescription !== undefined && { seoDescription: input.seoDescription ? stripHtml(input.seoDescription) : null }),
+        ...(input.customSections !== undefined && { customSections: input.customSections ?? Prisma.DbNull }),
       },
     });
   }

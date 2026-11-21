@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     throw redirect(303, `/login?redirectTo=/admin/listings/${params.id}`);
   }
 
-  const [listing, categories, locations] = await Promise.all([
+  const [listing, categories, locations, pricingPlans, owners] = await Promise.all([
     ListingService.getById(params.id),
     db.category.findMany({
       orderBy: { name: "asc" },
@@ -19,6 +19,17 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     db.location.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true, slug: true },
+    }),
+    db.pricingPlan.findMany({
+      where: { isActive: true },
+      orderBy: { displayOrder: "asc" },
+      select: { id: true, name: true, slug: true, searchPriority: true },
+    }),
+    db.user.findMany({
+      where: { deletedAt: null },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true, role: true },
+      take: 100,
     }),
   ]);
 
@@ -30,6 +41,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     listing,
     categories,
     locations,
+    pricingPlans,
+    owners,
   });
 };
 
@@ -42,10 +55,14 @@ export const actions: Actions = {
     const formData = await request.formData();
 
     const title = formData.get("title")?.toString();
+    const tagline = formData.get("tagline")?.toString() || undefined;
     const description = formData.get("description")?.toString();
     const status = formData.get("status")?.toString() as ListingStatus;
     const featured = formData.get("featured") === "true";
     const priority = Number(formData.get("priority")) || 0;
+    const planId = formData.get("planId")?.toString() || undefined;
+    const ownerId = formData.get("ownerId")?.toString() || undefined;
+
     const phone = formData.get("phone")?.toString() || undefined;
     const whatsapp = formData.get("whatsapp")?.toString() || undefined;
     const email = formData.get("email")?.toString() || undefined;
@@ -61,6 +78,9 @@ export const actions: Actions = {
     const priceRange = formData.get("priceRange") ? Number(formData.get("priceRange")) : 1;
     const categoryIds = formData.getAll("categoryIds").map((c) => c.toString()).filter(Boolean);
     const locationIds = formData.getAll("locationIds").map((l) => l.toString()).filter(Boolean);
+
+    const seoTitle = formData.get("seoTitle")?.toString() || undefined;
+    const seoDescription = formData.get("seoDescription")?.toString() || undefined;
 
     const amenitiesRaw = formData.get("amenities")?.toString() || "";
     const amenities = amenitiesRaw
@@ -78,16 +98,27 @@ export const actions: Actions = {
       }
     }
 
+    const customSectionsJson = formData.get("customSections")?.toString();
+    let customSections = undefined;
+    if (customSectionsJson) {
+      try {
+        customSections = JSON.parse(customSectionsJson);
+      } catch {
+        // Keep existing
+      }
+    }
+
     if (!title || !address || !locality) {
       return fail(400, { error: "Title, Address, and Locality are mandatory." });
     }
 
     try {
-      const updated = await ListingService.update(
+      await ListingService.update(
         locals.user.id,
         params.id,
         {
           title,
+          tagline,
           description: description || "",
           status,
           featured,
@@ -107,9 +138,23 @@ export const actions: Actions = {
           openingHours,
           categoryIds,
           locationIds,
+          seoTitle,
+          seoDescription,
+          customSections,
         },
         true
       );
+
+      // Handle owner or plan mutation directly if provided
+      if (ownerId !== undefined || planId !== undefined) {
+        await db.listing.update({
+          where: { id: params.id },
+          data: {
+            ...(ownerId !== undefined && { ownerId: ownerId === "unassigned" ? null : ownerId }),
+            ...(planId !== undefined && { planId: planId === "none" ? null : planId }),
+          },
+        });
+      }
 
       return { success: true, message: "Listing updated successfully!" };
     } catch (err: any) {
