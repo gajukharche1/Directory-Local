@@ -508,18 +508,37 @@
 
 <!-- Modal: New Folder -->
 {#if showNewFolderModal}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-    <div class="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl animate-in zoom-in-95">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-[2px] p-4 transition-all"
+    onclick={(e) => {
+      if (e.target === e.currentTarget) showNewFolderModal = false;
+    }}
+    onkeydown={(e) => {
+      if (e.key === "Escape") showNewFolderModal = false;
+    }}
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+  >
+    <div class="w-full max-w-sm rounded-3xl border border-slate-200/90 bg-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] animate-in zoom-in-95 text-slate-800">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-bold text-foreground flex items-center gap-2">
-          <FolderPlus class="h-4 w-4 text-primary" /> Create Virtual Folder
-        </h3>
+        <div class="flex items-center gap-2.5">
+          <div class="h-8 w-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+            <FolderPlus class="h-4 w-4" />
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">
+              Create Virtual Folder
+            </h3>
+            <p class="text-[11px] text-slate-400">Organize assets into collections</p>
+          </div>
+        </div>
         <button
           type="button"
-          class="p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+          class="h-7 w-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer"
           onclick={() => (showNewFolderModal = false)}
         >
-          <X class="h-4 w-4" />
+          <X class="h-3.5 w-3.5" />
         </button>
       </div>
 
@@ -538,7 +557,7 @@
         class="space-y-4"
       >
         <div>
-          <label for="folderName" class="block text-xs font-medium text-foreground mb-1">
+          <label for="folderName" class="block text-xs font-bold text-slate-700 mb-1.5">
             Folder Name
           </label>
           <input
@@ -548,21 +567,21 @@
             bind:value={newFolderName}
             placeholder="e.g. Platform Banners, Verified Listings..."
             required
-            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5 transition-all font-medium"
           />
         </div>
 
-        <div class="flex items-center justify-end gap-2">
+        <div class="flex items-center justify-end gap-2 pt-1">
           <button
             type="button"
-            class="px-3 py-1.5 rounded-xl border border-border text-xs text-muted-foreground hover:bg-muted cursor-pointer"
+            class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             onclick={() => (showNewFolderModal = false)}
           >
             Cancel
           </button>
           <button
             type="submit"
-            class="px-4 py-1.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90 cursor-pointer"
+            class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-bold text-white transition-all shadow-sm cursor-pointer disabled:opacity-50 active:scale-95"
           >
             Create
           </button>

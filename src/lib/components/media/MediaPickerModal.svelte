@@ -106,25 +106,28 @@
 
 {#if isOpen}
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/25 backdrop-blur-[2px] animate-in fade-in duration-200"
     role="dialog"
     aria-modal="true"
     aria-labelledby="media-picker-title"
+    onclick={(e) => {
+      if (e.target === e.currentTarget) onclose();
+    }}
   >
     <div
-      class="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-card border border-border shadow-2xl overflow-hidden text-foreground"
+      class="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden text-slate-800"
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => e.stopPropagation()}
       role="document"
       tabindex="-1"
     >
       <!-- Modal Header -->
-      <div class="flex items-center justify-between border-b border-border/80 px-6 py-4 bg-muted/20">
+      <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/70">
         <div>
-          <h2 id="media-picker-title" class="text-base font-bold tracking-tight">
+          <h2 id="media-picker-title" class="text-base font-bold text-slate-900 tracking-tight">
             {title}
           </h2>
-          <p class="text-xs text-muted-foreground mt-0.5">
+          <p class="text-xs text-slate-400 mt-0.5">
             {#if maxSelect === 1}
               Select 1 photo to attach
             {:else}

@@ -240,16 +240,27 @@
 
 <!-- New Folder Modal -->
 {#if showNewFolderModal}
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-    <div class="w-full max-w-sm rounded-2xl bg-card border border-border p-6 shadow-2xl">
-      <h3 class="text-base font-bold text-foreground">Create Virtual Folder</h3>
-      <p class="text-xs text-muted-foreground mt-1">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-[2px] transition-all"
+    onclick={(e) => {
+      if (e.target === e.currentTarget) showNewFolderModal = false;
+    }}
+    onkeydown={(e) => {
+      if (e.key === "Escape") showNewFolderModal = false;
+    }}
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+  >
+    <div class="w-full max-w-sm rounded-3xl bg-white border border-slate-200/90 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] text-slate-800 animate-in zoom-in-95">
+      <h3 class="text-base font-bold text-slate-900">Create Virtual Folder</h3>
+      <p class="text-xs text-slate-400 mt-1">
         Group your photos logically (e.g. "Storefront", "Menu", "Ambience").
       </p>
 
       <form method="POST" action="?/createFolder" use:enhance class="mt-4 space-y-3">
         <div>
-          <label for="folder-name-input" class="text-xs font-semibold text-foreground block mb-1">
+          <label for="folder-name-input" class="text-xs font-bold text-slate-700 block mb-1.5">
             Folder Name
           </label>
           <input
@@ -259,21 +270,21 @@
             bind:value={newFolderName}
             placeholder="e.g. Dining Area"
             required
-            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-3.5 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-900/5 transition-all font-medium"
           />
         </div>
 
         <div class="flex items-center justify-end gap-2 pt-2">
           <button
             type="button"
-            class="px-3 py-1.5 rounded-xl border border-border text-xs font-medium hover:bg-muted cursor-pointer"
+            class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             onclick={() => (showNewFolderModal = false)}
           >
             Cancel
           </button>
           <button
             type="submit"
-            class="px-4 py-1.5 rounded-xl bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90 cursor-pointer shadow-xs"
+            class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-bold text-white transition-all shadow-sm cursor-pointer active:scale-95"
             onclick={() => (showNewFolderModal = false)}
           >
             Create
