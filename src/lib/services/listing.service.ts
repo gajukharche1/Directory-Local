@@ -154,26 +154,102 @@ export class ListingService {
   }
 
   /**
-   * Update an existing listing with strict DAL owner validation
+   * Retrieves a single listing by its primary ID (for admin/owner management)
    */
-  static async update(ownerId: string, listingId: string, input: Partial<CreateListingInput>) {
-    // Assert existence and ownership
-    const existing = await db.listing.findFirst({
-      where: {
-        id: listingId,
-        ownerId,
+  static async getById(id: string) {
+    return await db.listing.findUnique({
+      where: { id },
+      include: {
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+        locations: {
+          include: {
+            location: true,
+          },
+        },
+        plan: true,
+        media: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: "asc" },
+        },
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
+    });
+  }
+
+  /**
+   * Update an existing listing with strict DAL owner validation or admin bypass
+   */
+  static async update(
+    ownerId: string,
+    listingId: string,
+    input: Partial<CreateListingInput> & {
+      status?: ListingStatus;
+      featured?: boolean;
+      priority?: number;
+      categoryIds?: string[];
+      locationIds?: string[];
+    },
+    isAdmin: boolean = false
+  ) {
+    // Assert existence and ownership
+    const where: any = { id: listingId };
+    if (!isAdmin) {
+      where.ownerId = ownerId;
+    }
+
+    const existing = await db.listing.findFirst({
+      where,
     });
 
     if (!existing) {
       throw new Error("Listing not found or access denied.");
     }
 
+    // Handle categories update if provided
+    if (input.categoryIds) {
+      await db.listingCategory.deleteMany({ where: { listingId } });
+      if (input.categoryIds.length > 0) {
+        await db.listingCategory.createMany({
+          data: input.categoryIds.map((categoryId) => ({ listingId, categoryId })),
+        });
+      }
+    }
+
+    // Handle locations update if provided
+    if (input.locationIds) {
+      await db.listingLocation.deleteMany({ where: { listingId } });
+      if (input.locationIds.length > 0) {
+        await db.listingLocation.createMany({
+          data: input.locationIds.map((locationId, idx) => ({
+            listingId,
+            locationId,
+            isPrimary: idx === 0,
+          })),
+        });
+      }
+    }
+
     return await db.listing.update({
       where: { id: listingId },
       data: {
         ...(input.title && { title: stripHtml(input.title) }),
-        ...(input.description && { description: sanitizeRichText(input.description) }),
+        ...(input.description !== undefined && { description: sanitizeRichText(input.description) }),
+        ...(input.status !== undefined && {
+          status: input.status,
+          ...(input.status === ListingStatus.published && !existing.publishedAt && { publishedAt: new Date() }),
+        }),
+        ...(input.featured !== undefined && { featured: input.featured }),
+        ...(input.priority !== undefined && { priority: input.priority }),
         ...(input.phone !== undefined && { phone: input.phone ? input.phone.trim() : null }),
         ...(input.whatsapp !== undefined && { whatsapp: input.whatsapp ? input.whatsapp.trim() : null }),
         ...(input.email !== undefined && { email: input.email ? input.email.trim() : null }),
@@ -181,8 +257,8 @@ export class ListingService {
         ...(input.address && { address: stripHtml(input.address) }),
         ...(input.locality && { locality: stripHtml(input.locality) }),
         ...(input.landmark !== undefined && { landmark: input.landmark ? stripHtml(input.landmark) : null }),
-        ...(input.latitude !== undefined && { latitude: new Prisma.Decimal(input.latitude) }),
-        ...(input.longitude !== undefined && { longitude: new Prisma.Decimal(input.longitude) }),
+        ...(input.latitude !== undefined && { latitude: input.latitude !== null ? new Prisma.Decimal(input.latitude) : null }),
+        ...(input.longitude !== undefined && { longitude: input.longitude !== null ? new Prisma.Decimal(input.longitude) : null }),
         ...(input.yearEstablished !== undefined && { yearEstablished: input.yearEstablished }),
         ...(input.priceRange !== undefined && { priceRange: input.priceRange }),
         ...(input.openingHours !== undefined && { openingHours: input.openingHours ?? Prisma.DbNull }),

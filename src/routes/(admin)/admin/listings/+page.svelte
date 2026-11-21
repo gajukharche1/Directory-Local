@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
   import type { PageData } from "./$types";
-  import { Search, ExternalLink, Star } from "lucide-svelte";
+  import { Search, ExternalLink, Star, Pencil } from "lucide-svelte";
 
   let { data }: { data: PageData } = $props();
 
@@ -122,15 +122,27 @@
                     </select>
                   </form>
                 </td>
-                <td class="p-3.5 text-right">
-                  <a
-                    href="/listing/{listing.slug}"
-                    target="_blank"
-                    class="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
-                  >
-                    <span>View</span>
-                    <ExternalLink class="h-3 w-3" />
-                  </a>
+                <td class="p-3.5 text-right whitespace-nowrap">
+                  <div class="inline-flex items-center justify-end gap-3">
+                    <a
+                      href="/admin/listings/{listing.id}"
+                      class="inline-flex items-center gap-1 font-semibold text-foreground hover:text-primary transition-colors"
+                      title="Edit listing details, photos and categories"
+                    >
+                      <Pencil class="h-3.5 w-3.5 text-primary" />
+                      <span>Edit</span>
+                    </a>
+
+                    <a
+                      href="/listing/{listing.slug}"
+                      target="_blank"
+                      class="inline-flex items-center gap-1 font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                      title="View live public storefront"
+                    >
+                      <span>View</span>
+                      <ExternalLink class="h-3 w-3" />
+                    </a>
+                  </div>
                 </td>
               </tr>
             {/each}
