@@ -267,6 +267,8 @@ export class ListingService {
         ...(input.tagline !== undefined && { tagline: input.tagline ? stripHtml(input.tagline) : null }),
         ...(input.seoTitle !== undefined && { seoTitle: input.seoTitle ? stripHtml(input.seoTitle) : null }),
         ...(input.seoDescription !== undefined && { seoDescription: input.seoDescription ? stripHtml(input.seoDescription) : null }),
+        ...(input.seoKeywords !== undefined && { seoKeywords: input.seoKeywords ? stripHtml(input.seoKeywords) : null }),
+        ...(input.ogImage !== undefined && { ogImage: input.ogImage ? input.ogImage.trim() : null }),
         ...(input.customSections !== undefined && { customSections: input.customSections ?? Prisma.DbNull }),
       },
     });

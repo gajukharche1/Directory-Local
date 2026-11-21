@@ -151,8 +151,45 @@
   // SEO & Meta Tags
   let seoTitle = $state(data.listing.seoTitle || data.listing.title || "");
   let seoDescription = $state(
-    data.listing.seoDescription || (data.listing.description ? data.listing.description.slice(0, 155) : "")
+    data.listing.seoDescription || (data.listing.description ? data.listing.description.replace(/<[^>]*>/g, "").slice(0, 160) : "")
   );
+  let seoKeywords = $state(data.listing.seoKeywords || "");
+  let ogImage = $state(data.listing.ogImage || (data.listing.media?.[0]?.url || ""));
+
+  function autoFillFromContent() {
+    const cleanTitle = title || data.listing.title;
+    const cleanLocality = locality || data.listing.locality || "Local Area";
+    const primaryCat = categories.find((c: any) => c.id === primaryCategoryId)?.name || "Business";
+    
+    // Auto-fill Title (max 60 recommended)
+    const suggestedTitle = `${cleanTitle} in ${cleanLocality} | Verified Rates & Reviews`;
+    seoTitle = suggestedTitle.slice(0, 60);
+
+    // Auto-fill Description (max 160 recommended)
+    const plainDesc = (description || data.listing.description || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+    if (plainDesc) {
+      seoDescription = plainDesc.slice(0, 160);
+    } else {
+      seoDescription = `Find contact details, rates, customer reviews, and photos for ${cleanTitle} in ${cleanLocality}. Verified local listing.`.slice(0, 160);
+    }
+
+    // Auto-fill Keywords
+    const kws = [
+      cleanTitle.toLowerCase(),
+      cleanLocality.toLowerCase(),
+      primaryCat.toLowerCase(),
+      `${primaryCat.toLowerCase()} in ${cleanLocality.toLowerCase()}`,
+      `best ${primaryCat.toLowerCase()}`,
+      "verified reviews",
+      "contact details"
+    ];
+    seoKeywords = kws.join(", ");
+
+    // Auto-fill OG Image
+    if (!ogImage && data.listing.media && data.listing.media.length > 0) {
+      ogImage = data.listing.media[0].url;
+    }
+  }
 
   // Custom Sections / Modular Data
   let rawSections = data.listing.customSections || {};
@@ -989,38 +1026,35 @@
 
     <!-- Section 8: 🔍 Search Engine Optimization (SEO & Meta Tags) -->
     <div class="rounded-3xl border border-border/80 bg-card p-6 shadow-xs space-y-5">
-      <div class="flex items-center justify-between pb-3 border-b border-border/60">
-        <h2 class="text-sm font-bold text-foreground flex items-center gap-2">
-          <Search class="h-4 w-4 text-primary" /> 8. Search Engine Optimization (SEO & Meta Tags)
-        </h2>
-        <span class="text-[11px] text-muted-foreground font-medium">Step 8 of 8</span>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+        <div>
+          <h2 class="text-sm font-bold text-foreground flex items-center gap-2">
+            <Search class="h-4 w-4 text-primary" /> 7. Search Engine Optimization (SEO & Meta Tags)
+          </h2>
+          <p class="text-xs text-muted-foreground mt-0.5">
+            Configure search engine title, meta description, and keywords for Google indexation
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card text-xs font-semibold text-foreground hover:bg-muted shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
+          onclick={autoFillFromContent}
+        >
+          <Sparkles class="h-3.5 w-3.5 text-amber-500" />
+          <span>Auto-fill from Content</span>
+        </button>
       </div>
 
       <div class="space-y-4">
-        <!-- Live Google SERP Preview Card -->
-        <div class="p-4 rounded-2xl border border-border bg-muted/20 space-y-1">
-          <span class="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block mb-1">
-            Google SERP Snippet Preview
-          </span>
-          <div class="text-xs text-emerald-700 truncate font-mono">
-            https://yourdomain.com/listing/{listing.slug}
-          </div>
-          <div class="text-sm font-semibold text-blue-700 hover:underline truncate cursor-pointer">
-            {seoTitle || title}
-          </div>
-          <div class="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-            {seoDescription || description.slice(0, 155)}
-          </div>
-        </div>
-
-        <!-- Meta Title -->
+        <!-- SEO Meta Title -->
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label for="seoTitle" class="block text-xs font-semibold text-foreground">
-              Meta SEO Title
+            <label for="seoTitle" class="block text-xs font-bold text-foreground">
+              SEO Meta Title
             </label>
-            <span class="text-[10px] font-mono text-muted-foreground">
-              {seoTitle.length} / 60 characters
+            <span class={`text-[10px] font-mono ${seoTitle.length > 60 ? 'text-amber-600 font-bold' : 'text-muted-foreground'}`}>
+              {seoTitle.length} / 60 recommended (max 120)
             </span>
           </div>
           <input
@@ -1028,19 +1062,19 @@
             type="text"
             name="seoTitle"
             bind:value={seoTitle}
-            placeholder="e.g. Best Hair & Beauty Salon in Koregaon Park | Reviews & Rates"
-            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary"
+            placeholder="e.g. Abc Listing"
+            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-medium outline-none focus:border-primary"
           />
         </div>
 
-        <!-- Meta Description -->
+        <!-- SEO Meta Description -->
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label for="seoDescription" class="block text-xs font-semibold text-foreground">
-              Meta SEO Description
+            <label for="seoDescription" class="block text-xs font-bold text-foreground">
+              SEO Meta Description
             </label>
-            <span class="text-[10px] font-mono text-muted-foreground">
-              {seoDescription.length} / 160 characters
+            <span class={`text-[10px] font-mono ${seoDescription.length > 160 ? 'text-amber-600 font-bold' : 'text-muted-foreground'}`}>
+              {seoDescription.length} / 160 recommended (max 320)
             </span>
           </div>
           <textarea
@@ -1048,9 +1082,95 @@
             name="seoDescription"
             bind:value={seoDescription}
             rows="3"
-            placeholder="Compelling search snippet description for Google..."
-            class="w-full rounded-xl border border-border bg-background p-3 text-xs outline-none focus:border-primary leading-relaxed"
+            placeholder="Compelling search snippet description for Google indexation..."
+            class="w-full rounded-xl border border-border bg-background p-3 text-xs outline-none focus:border-primary leading-relaxed font-sans"
           ></textarea>
+        </div>
+
+        <!-- SEO Keywords (Comma Separated) -->
+        <div>
+          <label for="seoKeywords" class="block text-xs font-bold text-foreground mb-1">
+            SEO Keywords (Comma Separated)
+          </label>
+          <input
+            id="seoKeywords"
+            type="text"
+            name="seoKeywords"
+            bind:value={seoKeywords}
+            placeholder="e.g. dentist in pimple saudagar, dental clinic kokane chowk, teeth whitening pune"
+            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary"
+          />
+        </div>
+
+        <!-- Open Graph Social Share Banner -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="ogImage" class="inline-flex items-center gap-1.5 text-xs font-bold text-foreground">
+              <Share2 class="h-3.5 w-3.5 text-primary" />
+              <span>Open Graph Social Share Banner (WhatsApp, Twitter, LinkedIn)</span>
+            </label>
+            <span class="text-[10px] text-muted-foreground font-mono">Optimal: 1200x630px</span>
+          </div>
+
+          <input
+            id="ogImage"
+            type="url"
+            name="ogImage"
+            bind:value={ogImage}
+            placeholder="https://... or click a photo below"
+            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono outline-none focus:border-primary"
+          />
+
+          {#if listing.media && listing.media.length > 0}
+            <div class="flex items-center gap-2 pt-1 overflow-x-auto scrollbar-none">
+              <span class="text-[10px] text-muted-foreground shrink-0">Click photo to select banner:</span>
+              {#each listing.media as m (m.id)}
+                <button
+                  type="button"
+                  class={`relative h-10 w-14 rounded-lg overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
+                    ogImage === m.url ? "border-primary scale-105 shadow-sm" : "border-border/60 opacity-60 hover:opacity-100"
+                  }`}
+                  onclick={() => (ogImage = m.url)}
+                  title="Click to set as social share banner"
+                >
+                  <img src={m.url} alt="" class="h-full w-full object-cover" />
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
+
+        <!-- Social Media (Open Graph) Live Preview Card -->
+        <div class="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-3">
+          <div class="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+            <Share2 class="h-3.5 w-3.5 text-primary" />
+            <span>Social Media (Open Graph / WhatsApp / Twitter) Preview</span>
+          </div>
+
+          <div class="max-w-md rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs">
+            {#if ogImage}
+              <div class="aspect-[1.91/1] w-full bg-slate-950 overflow-hidden">
+                <img src={ogImage} alt="Social share banner" class="w-full h-full object-cover" />
+              </div>
+            {:else}
+              <div class="aspect-[1.91/1] w-full bg-muted/40 border-b border-border/60 flex flex-col items-center justify-center text-muted-foreground text-xs font-medium">
+                <ImageIcon class="h-6 w-6 mb-1 text-muted-foreground/60" />
+                <span>No OpenGraph Banner Selected</span>
+              </div>
+            {/if}
+
+            <div class="p-3.5 space-y-1">
+              <p class="text-xs font-bold text-foreground truncate">
+                {seoTitle || title || "Business Title"}
+              </p>
+              <p class="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                {seoDescription || description || "Business description preview..."}
+              </p>
+              <p class="text-[9px] font-mono text-muted-foreground uppercase tracking-wider pt-1">
+                LOCALDIRECTORY.IN • VERIFIED LISTING
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

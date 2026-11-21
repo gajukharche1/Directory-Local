@@ -250,6 +250,8 @@ model Listing {
   tagline        String?
   seoTitle       String?
   seoDescription String?
+  seoKeywords    String?           // Comma-separated search keywords
+  ogImage        String?           // Open Graph social share banner URL
   customSections Json?             // Modular sections, rate card items, sentiment highlights, schema options
 
   // Contact & Spatial Details

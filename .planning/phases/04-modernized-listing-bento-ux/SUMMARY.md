@@ -11,6 +11,7 @@ commits:
   - f39159e: "feat(listing): add categorized services rate card and customer sentiment chips"
   - 156d72f: "feat(listing): add sticky desktop lead card and review rating histogram"
   - 62ba7a3: "test(listing): integrate Schema.org JSON-LD, verify WCAG AA and typecheck"
+  - pending: "feat(admin-listing): add full admin listing editor with SEO keywords, OpenGraph banner and social live preview"
 provides:
   - Responsive Bento 5-tile photo mosaic with CLS=0 pre-allocated aspect ratios and swipeable mobile carousel
   - Full-screen ListingLightboxModal with keyboard navigation (Esc, Arrow Left/Right) and thumbnail jump strip
@@ -22,13 +23,15 @@ provides:
   - Sticky right-rail desktop ListingStickyLeadCard with 15-minute response SLA badge and instant callback dispatch
   - Overhauled ReviewDistribution with 5-star to 1-star interactive histogram breakdown and owner reply threads
   - Dynamic Schema.org LocalBusiness JSON-LD injection with geo-coordinates, images, telephone, and aggregate ratings
-affects: [listings, public-pages, seo, reviews]
+  - Full Admin Listing Editor layout matching enterprise design (Core Details, Business Classification, Geo-Location & Maps, Contact & Support Channels, Amenities & Facilities, Operating Hours, Special Highlights & Corporate Badges, Administrative Controls, SEO & Meta Tags, and Conversion Rate Optimization)
+  - Enhanced SEO block with recommended character counters (60 and 160), Comma-separated SEO Keywords, Open Graph social share banner with thumbnail selector, social live preview card, and 1-click auto-fill from content
+affects: [listings, public-pages, seo, reviews, admin]
 ---
 
 # Phase 04: Modernized Listing Detail & Bento UX Execution Summary
 
 **Executed on dedicated branch**: `feature/phase-04-listing-bento-ux`  
-**All 5 Waves Completed Successfully with 5 Atomic Conventional Commits.**
+**All Waves & Admin Listing Editor completed with Atomic Commits.**
 
 ## Accomplishments
 1. **Responsive Bento Photo Hero & Lightbox**:
@@ -48,6 +51,17 @@ affects: [listings, public-pages, seo, reviews]
 5. **Page Assembly, Schema.org SEO & Verification**:
    - Integrated all components into `src/routes/(public)/listing/[slug]/+page.svelte`.
    - Injected dynamic Schema.org `LocalBusiness` / subtype JSON-LD with geo-coordinates, images array, hours specification, and aggregate rating.
+   - Added OpenGraph and Twitter card meta tags referencing listing title, description, and OpenGraph social share banner image.
+6. **Full-Featured Admin Listing Editor & SEO / Open Graph Block**:
+   - Upgraded Prisma schema with `seoKeywords` and `ogImage` columns, synced with database via `npx prisma db push` and generated client.
+   - Enhanced `ListingService.update(...)` to support administrator bypass for modifying verification status, badges, featured flags, and SEO parameters.
+   - Created full 10-section Admin Listing Edit view (`src/routes/(admin)/admin/listings/[id]/+page.svelte` and `+page.server.ts`) matching reference designs.
+   - Implemented Section 7: Search Engine Optimization (SEO & Meta Tags) with:
+     - Recommended character length gauges (`N / 60 recommended`, `N / 160 recommended`).
+     - Comma-separated SEO Keywords input.
+     - Open Graph Social Share Banner (WhatsApp, Twitter, LinkedIn) with optimal dimensions (`1200x630px`) and clickable thumbnail picker from uploaded listing media.
+     - Live Social Media Preview card simulating WhatsApp / Twitter / Open Graph cards with real-time reactive title, description, and image display.
+     - `✨ Auto-fill from Content` button to intelligently generate SEO meta tags from listing content.
    - All 11 unit tests pass in Vitest; hot module replacement verified on local dev server.
 
 ## Verification

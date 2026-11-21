@@ -45,11 +45,28 @@
 </script>
 
 <svelte:head>
-  <title>{listing?.title || "Business"} in {listing?.locality || "Local Area"} | Reviews, Rates & Contact</title>
+  <title>{listing?.seoTitle || `${listing?.title || "Business"} in ${listing?.locality || "Local Area"} | Reviews, Rates & Contact`}</title>
   <meta
     name="description"
-    content={`Contact details, opening hours, photos, rate cards, and customer reviews for ${listing?.title || "Business"} located at ${listing?.locality || "Local Area"}, Local Business.`}
+    content={listing?.seoDescription || `Contact details, opening hours, photos, rate cards, and customer reviews for ${listing?.title || "Business"} located at ${listing?.locality || "Local Area"}, Local Business.`}
   />
+  {#if listing?.seoKeywords}
+    <meta name="keywords" content={listing.seoKeywords} />
+  {/if}
+  <!-- Open Graph / Facebook / WhatsApp -->
+  <meta property="og:type" content="business.business" />
+  <meta property="og:title" content={listing?.seoTitle || listing?.title || "Business"} />
+  <meta property="og:description" content={listing?.seoDescription || listing?.description || `Details and reviews for ${listing?.title}`} />
+  {#if listing?.ogImage || listing?.media?.[0]?.url}
+    <meta property="og:image" content={listing?.ogImage || listing?.media?.[0]?.url} />
+  {/if}
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={listing?.seoTitle || listing?.title || "Business"} />
+  <meta name="twitter:description" content={listing?.seoDescription || listing?.description || `Details and reviews for ${listing?.title}`} />
+  {#if listing?.ogImage || listing?.media?.[0]?.url}
+    <meta name="twitter:image" content={listing?.ogImage || listing?.media?.[0]?.url} />
+  {/if}
   {#if data.localBusinessSchema}
     {@html `<script type="application/ld+json">${JSON.stringify(data.localBusinessSchema)}</script>`}
   {/if}

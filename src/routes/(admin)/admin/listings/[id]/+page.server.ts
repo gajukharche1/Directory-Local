@@ -81,6 +81,8 @@ export const actions: Actions = {
 
     const seoTitle = formData.get("seoTitle")?.toString() || undefined;
     const seoDescription = formData.get("seoDescription")?.toString() || undefined;
+    const seoKeywords = formData.get("seoKeywords")?.toString() || undefined;
+    const ogImage = formData.get("ogImage")?.toString() || undefined;
 
     const amenitiesRaw = formData.get("amenities")?.toString() || "";
     const amenities = amenitiesRaw
@@ -140,6 +142,8 @@ export const actions: Actions = {
           locationIds,
           seoTitle,
           seoDescription,
+          seoKeywords,
+          ogImage,
           customSections,
         },
         true
