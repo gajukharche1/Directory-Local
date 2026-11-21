@@ -19,7 +19,7 @@ export const load: PageServerLoad = async ({ url }) => {
     ];
   }
 
-  const [listings, totalCount] = await Promise.all([
+  const [listings, totalCount, publishedCount, pendingCount, draftCount] = await Promise.all([
     db.listing
       .findMany({
         where: whereClause,
@@ -47,6 +47,9 @@ export const load: PageServerLoad = async ({ url }) => {
       })
       .catch(() => []),
     db.listing.count({ where: whereClause }).catch(() => 0),
+    db.listing.count({ where: { status: ListingStatus.published } }).catch(() => 0),
+    db.listing.count({ where: { status: ListingStatus.pending_review } }).catch(() => 0),
+    db.listing.count({ where: { status: ListingStatus.draft } }).catch(() => 0),
   ]);
 
   return {
@@ -55,6 +58,9 @@ export const load: PageServerLoad = async ({ url }) => {
       averageRating: Number(l.averageRating),
     })),
     totalCount,
+    publishedCount,
+    pendingCount,
+    draftCount,
     statusFilter: statusFilter || "",
     query,
   };
