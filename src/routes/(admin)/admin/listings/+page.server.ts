@@ -22,7 +22,15 @@ export const load: PageServerLoad = async ({ url }) => {
     ];
   }
 
-  const [listings, totalCount, publishedCount, pendingCount, draftCount] = await Promise.all([
+  const [
+    listings,
+    totalCount,
+    publishedCount,
+    pendingCount,
+    draftCount,
+    allCategories,
+    allLocations,
+  ] = await Promise.all([
     db.listing
       .findMany({
         where: whereClause,
@@ -40,7 +48,14 @@ export const load: PageServerLoad = async ({ url }) => {
           categories: {
             select: {
               category: {
-                select: { name: true },
+                select: { id: true, name: true },
+              },
+            },
+          },
+          locations: {
+            select: {
+              location: {
+                select: { id: true, name: true },
               },
             },
           },
@@ -54,6 +69,18 @@ export const load: PageServerLoad = async ({ url }) => {
     db.listing.count({ where: { status: ListingStatus.published } }).catch(() => 0),
     db.listing.count({ where: { status: ListingStatus.pending_review } }).catch(() => 0),
     db.listing.count({ where: { status: ListingStatus.draft } }).catch(() => 0),
+    db.category
+      .findMany({
+        select: { id: true, name: true, slug: true },
+        orderBy: { name: "asc" },
+      })
+      .catch(() => []),
+    db.location
+      .findMany({
+        select: { id: true, name: true, slug: true },
+        orderBy: { name: "asc" },
+      })
+      .catch(() => []),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -72,6 +99,8 @@ export const load: PageServerLoad = async ({ url }) => {
     page,
     pageSize,
     totalPages,
+    allCategories,
+    allLocations,
   };
 };
 
@@ -124,6 +153,81 @@ export const actions: Actions = {
       return { success: true, count: result.count };
     } catch (err: any) {
       return fail(500, { message: err?.message || "Failed to bulk update status" });
+    }
+  },
+
+  bulkAssignCategory: async ({ request }) => {
+    const formData = await request.formData();
+    const rawIds = formData.get("ids") as string;
+    const categoryId = formData.get("categoryId") as string;
+
+    if (!rawIds || !categoryId) {
+      return fail(400, { message: "Listing IDs and Category required" });
+    }
+
+    let ids: string[] = [];
+    try {
+      ids = JSON.parse(rawIds);
+    } catch {
+      return fail(400, { message: "Malformed IDs payload" });
+    }
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return fail(400, { message: "No listings selected" });
+    }
+
+    try {
+      const records = ids.map((listingId) => ({
+        listingId,
+        categoryId,
+      }));
+
+      await db.listingCategory.createMany({
+        data: records,
+        skipDuplicates: true,
+      });
+
+      return { success: true, count: ids.length };
+    } catch (err: any) {
+      return fail(500, { message: err?.message || "Failed to assign category" });
+    }
+  },
+
+  bulkAssignLocation: async ({ request }) => {
+    const formData = await request.formData();
+    const rawIds = formData.get("ids") as string;
+    const locationId = formData.get("locationId") as string;
+
+    if (!rawIds || !locationId) {
+      return fail(400, { message: "Listing IDs and Location required" });
+    }
+
+    let ids: string[] = [];
+    try {
+      ids = JSON.parse(rawIds);
+    } catch {
+      return fail(400, { message: "Malformed IDs payload" });
+    }
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return fail(400, { message: "No listings selected" });
+    }
+
+    try {
+      const records = ids.map((listingId) => ({
+        listingId,
+        locationId,
+        isPrimary: false,
+      }));
+
+      await db.listingLocation.createMany({
+        data: records,
+        skipDuplicates: true,
+      });
+
+      return { success: true, count: ids.length };
+    } catch (err: any) {
+      return fail(500, { message: err?.message || "Failed to assign location" });
     }
   },
 

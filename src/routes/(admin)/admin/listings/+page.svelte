@@ -18,7 +18,9 @@
     ShieldAlert,
     Trash2,
     Check,
-    Plus
+    Plus,
+    FolderTree,
+    X
   } from "lucide-svelte";
   import { createBulkSelection } from "$lib/components/ui/bulk-select/bulk-select.svelte";
   import BulkSelectCheckbox from "$lib/components/ui/bulk-select/BulkSelectCheckbox.svelte";
@@ -33,6 +35,10 @@
   let visibleIds = $derived(data.listings.map((l) => l.id));
 
   let showDeleteModal = $state(false);
+  let showCategoryModal = $state(false);
+  let showLocationModal = $state(false);
+  let selectedCategoryId = $state("");
+  let selectedLocationId = $state("");
   let isProcessing = $state(false);
   let feedbackMessage = $state("");
 
@@ -407,11 +413,47 @@
   <BulkSelectToolbar
     selectedCount={selection.selectedCount}
     totalCount={visibleIds.length}
+    entityName="listings"
     onClear={() => selection.deselectAll()}
   >
     {#snippet actions()}
+      <!-- Assign Category Button -->
+      <button
+        type="button"
+        onclick={() => (showCategoryModal = true)}
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+        title="Assign Category to selected listings"
+      >
+        <FolderTree class="h-3.5 w-3.5" />
+        <span>Categories</span>
+      </button>
+
+      <!-- Assign Location Button -->
+      <button
+        type="button"
+        onclick={() => (showLocationModal = true)}
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+        title="Assign Location to selected listings"
+      >
+        <MapPin class="h-3.5 w-3.5" />
+        <span>Location</span>
+      </button>
+
       <!-- Bulk Mark Published -->
-      <form method="POST" action="?/bulkUpdateStatus" use:enhance>
+      <form
+        method="POST"
+        action="?/bulkUpdateStatus"
+        use:enhance={() => {
+          return async ({ result }) => {
+            if (result.type === "success") {
+              feedbackMessage = "Selected listings published successfully";
+              selection.deselectAll();
+              await invalidateAll();
+              setTimeout(() => (feedbackMessage = ""), 4000);
+            }
+          };
+        }}
+      >
         <input type="hidden" name="ids" value={JSON.stringify(selection.selectedArray)} />
         <input type="hidden" name="status" value="published" />
         <button
@@ -424,7 +466,20 @@
       </form>
 
       <!-- Bulk Mark Pending -->
-      <form method="POST" action="?/bulkUpdateStatus" use:enhance>
+      <form
+        method="POST"
+        action="?/bulkUpdateStatus"
+        use:enhance={() => {
+          return async ({ result }) => {
+            if (result.type === "success") {
+              feedbackMessage = "Selected listings set to pending review";
+              selection.deselectAll();
+              await invalidateAll();
+              setTimeout(() => (feedbackMessage = ""), 4000);
+            }
+          };
+        }}
+      >
         <input type="hidden" name="ids" value={JSON.stringify(selection.selectedArray)} />
         <input type="hidden" name="status" value="pending_review" />
         <button
@@ -432,7 +487,7 @@
           class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
         >
           <Clock class="h-3.5 w-3.5" />
-          <span>Mark Pending</span>
+          <span>Pending</span>
         </button>
       </form>
 
@@ -447,6 +502,166 @@
       </button>
     {/snippet}
   </BulkSelectToolbar>
+
+  <!-- Bulk Assign Category Modal -->
+  {#if showCategoryModal}
+    <div class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="h-9 w-9 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <FolderTree class="h-5 w-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Assign Category</h3>
+              <p class="text-xs text-slate-500">Apply taxonomy to {selection.selectedCount} selected listings</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
+            onclick={() => (showCategoryModal = false)}
+          >
+            <X class="h-4 w-4" />
+          </button>
+        </div>
+
+        <form
+          method="POST"
+          action="?/bulkAssignCategory"
+          use:enhance={() => {
+            isProcessing = true;
+            return async ({ result }) => {
+              isProcessing = false;
+              if (result.type === "success") {
+                showCategoryModal = false;
+                selectedCategoryId = "";
+                feedbackMessage = `Category assigned to ${selection.selectedCount} listings`;
+                selection.deselectAll();
+                await invalidateAll();
+                setTimeout(() => (feedbackMessage = ""), 4000);
+              }
+            };
+          }}
+          class="space-y-4"
+        >
+          <input type="hidden" name="ids" value={JSON.stringify(selection.selectedArray)} />
+          <div class="space-y-1.5">
+            <label for="bulk-category-select" class="text-xs font-bold text-slate-700">Select Category</label>
+            <select
+              id="bulk-category-select"
+              name="categoryId"
+              bind:value={selectedCategoryId}
+              required
+              class="w-full text-xs py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-medium"
+            >
+              <option value="" disabled>Choose a category...</option>
+              {#each data.allCategories as cat}
+                <option value={cat.id}>{cat.name}</option>
+              {/each}
+            </select>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button
+              type="button"
+              class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+              onclick={() => (showCategoryModal = false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!selectedCategoryId || isProcessing}
+              class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-xs font-bold text-white shadow-xs transition-colors cursor-pointer"
+            >
+              {isProcessing ? "Assigning..." : "Assign Category"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Bulk Assign Location Modal -->
+  {#if showLocationModal}
+    <div class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="h-9 w-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <MapPin class="h-5 w-5" />
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Assign Location</h3>
+              <p class="text-xs text-slate-500">Apply geographic hub to {selection.selectedCount} selected listings</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
+            onclick={() => (showLocationModal = false)}
+          >
+            <X class="h-4 w-4" />
+          </button>
+        </div>
+
+        <form
+          method="POST"
+          action="?/bulkAssignLocation"
+          use:enhance={() => {
+            isProcessing = true;
+            return async ({ result }) => {
+              isProcessing = false;
+              if (result.type === "success") {
+                showLocationModal = false;
+                selectedLocationId = "";
+                feedbackMessage = `Location assigned to ${selection.selectedCount} listings`;
+                selection.deselectAll();
+                await invalidateAll();
+                setTimeout(() => (feedbackMessage = ""), 4000);
+              }
+            };
+          }}
+          class="space-y-4"
+        >
+          <input type="hidden" name="ids" value={JSON.stringify(selection.selectedArray)} />
+          <div class="space-y-1.5">
+            <label for="bulk-location-select" class="text-xs font-bold text-slate-700">Select Location Hub</label>
+            <select
+              id="bulk-location-select"
+              name="locationId"
+              bind:value={selectedLocationId}
+              required
+              class="w-full text-xs py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 font-medium"
+            >
+              <option value="" disabled>Choose a location...</option>
+              {#each data.allLocations as loc}
+                <option value={loc.id}>{loc.name}</option>
+              {/each}
+            </select>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button
+              type="button"
+              class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+              onclick={() => (showLocationModal = false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!selectedLocationId || isProcessing}
+              class="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-xs font-bold text-white shadow-xs transition-colors cursor-pointer"
+            >
+              {isProcessing ? "Assigning..." : "Assign Location"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {/if}
 
   <!-- Bulk Delete Confirmation Safety Modal -->
   <BulkConfirmModal

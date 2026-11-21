@@ -309,6 +309,7 @@
   <BulkSelectToolbar
     selectedCount={selection.selectedCount}
     totalCount={visibleIds.length}
+    entityName="locations"
     onClear={() => selection.deselectAll()}
   >
     {#snippet actions()}
