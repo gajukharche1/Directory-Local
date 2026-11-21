@@ -1,7 +1,7 @@
-# Phase Plan: Bulk Select & Multi-Action Utility
+# Phase Plan: Bulk Select & Multi-Action Utility (Updated)
 
 ## Goal
-Implement a unified, accessible, and reactive multi-selection system across all administrative tabular data views (`/admin/listings`, `/admin/categories`, `/admin/locations`), featuring Shift+Click range selection, indeterminate header checkboxes, a floating action dock, safety confirmation modals, and transactional batch mutations.
+Implement a unified, accessible, and reactive multi-selection and pagination system across administrative tabular data views (`/admin/listings`, `/admin/categories`, `/admin/locations`), featuring Shift+Click range selection, indeterminate header checkboxes, floating action docks, safety confirmation modals, transactional batch mutations, and universal server-side pagination with query preservation.
 
 ---
 
@@ -13,6 +13,8 @@ Implement a unified, accessible, and reactive multi-selection system across all 
   - Wave 2: `feat(admin): implement batch server actions for listings, categories and locations`
   - Wave 3: `feat(admin): wire multi-select and floating action dock into admin views`
   - Wave 4: `test(admin): verify Shift+Click range selection, indeterminate state and typecheck`
+  - Wave 5: `feat(admin-locations): add bulk select and multi-action utility to locations`
+  - Wave 6: `feat(pagination): add universal pagination across listings, categories, and locations`
 
 ---
 
@@ -42,15 +44,27 @@ Implement a unified, accessible, and reactive multi-selection system across all 
 - [x] **Task 4.1**: Test Shift+Click multi-row range selection across pagination boundaries.
 - [x] **Task 4.2**: Verify indeterminate checkbox state when selecting a subset of rows.
 - [x] **Task 4.3**: Verify batch actions show instant feedback toasts without broken table pagination.
-- [x] **Task 4.4**: Run `npm test` verifying 16/16 tests pass across 4 test suites.
+- [x] **Task 4.4**: Run `npm test` verifying test suites pass.
 - [x] **Task 4.5**: Commit Wave 4: `git commit -m "test(admin): verify Shift+Click range selection, indeterminate state and typecheck"`.
+
+### Wave 5: Locations Multi-Action Utility & Batch Operations
+- [x] **Task 5.1**: Implement `bulkDelete` and `bulkFeature` actions in `src/routes/(admin)/admin/locations/+page.server.ts`.
+- [x] **Task 5.2**: Wire `createBulkSelection`, `BulkSelectCheckbox`, `BulkSelectToolbar`, and `BulkConfirmModal` into `src/routes/(admin)/admin/locations/+page.svelte`.
+- [x] **Task 5.3**: Add Feature All, Unfeature All, and Bulk Delete safety modal for Locations.
+
+### Wave 6: Universal Pagination Component Across Admin Modules
+- [x] **Task 6.1**: Create reusable `src/lib/components/ui/Pagination.svelte` with page numbers, responsive item counter, previous/next buttons, and query param preservation.
+- [x] **Task 6.2**: Add server-side pagination with query support to `src/routes/(admin)/admin/listings/+page.server.ts` and `+page.svelte`.
+- [x] **Task 6.3**: Add server-side pagination with query support to `src/routes/(admin)/admin/categories/+page.server.ts` and `+page.svelte`.
+- [x] **Task 6.4**: Add server-side pagination with query support to `src/routes/(admin)/admin/locations/+page.server.ts` and `+page.svelte`.
 
 ---
 
 ## Verification Criteria
-1. Clicking header checkbox toggles selection across all visible rows.
-2. Clicking a row, then Shift+Clicking a row 5 items down selects all 6 contiguous rows.
-3. Floating toolbar appears smoothly at the bottom with the exact selected count.
-4. Performing a bulk status change (e.g. "Mark as Published") updates all selected records in a single database transaction.
-5. Bulk delete triggers the safety modal with correct item preview before executing.
-6. `npm run check` and `npm test` pass cleanly.
+1. Clicking header checkbox toggles selection across all visible rows on current page.
+2. Shift+Click selects contiguous ranges in both Listings and Locations tables.
+3. Floating dock appears smoothly when 1 or more items are selected.
+4. Bulk actions (publish, pending, delete for listings; feature, unfeature, delete for locations) execute atomically.
+5. Deletions prompt a modal preview before irreversible execution.
+6. Universal pagination displays correct items range and preserves active filters (`q`, `status`).
+7. All test suites pass cleanly.
