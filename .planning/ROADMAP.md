@@ -84,7 +84,7 @@ Plans:
 **Plans:** 1/1 plans planned  
 
 Plans:
-- [ ] 06-shimmer-loading-states-listings-redesign/PLAN.md
+- [x] 06-shimmer-loading-states-listings-redesign/PLAN.md
 
 ---
 
