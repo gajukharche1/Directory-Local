@@ -3,15 +3,18 @@
   import SkipLink from "$lib/components/ui/SkipLink.svelte";
   import type { LayoutProps } from "./$types";
 
-  let { children }: LayoutProps = $props();
+  let { data, children }: LayoutProps = $props();
 </script>
 
 <svelte:head>
-  <title>Local Business Directory | Find Top Services Nearby</title>
+  <title>{data.siteSettings?.siteName || "Local Business Directory"} | {data.siteSettings?.siteTagline || "Find Top Services Nearby"}</title>
   <meta
     name="description"
-    content="Discover verified local businesses, restaurants, healthcare, clinics, and professional services across your city and neighborhood."
+    content={data.siteSettings?.siteTagline || "Discover verified local businesses, restaurants, healthcare, clinics, and professional services across your city and neighborhood."}
   />
+  {#if data.siteSettings?.faviconUrl}
+    <link rel="icon" href={data.siteSettings.faviconUrl} />
+  {/if}
 </svelte:head>
 
 <div class="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased selection:bg-indigo-500/20">

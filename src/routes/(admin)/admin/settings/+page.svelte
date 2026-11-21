@@ -27,9 +27,14 @@
     CheckCircle2,
     ExternalLink,
     Laptop,
+    Coins,
+    SlidersHorizontal,
+    Image as ImageIcon,
+    Loader2,
   } from "lucide-svelte";
   import AddUserModal from "$lib/components/admin/AddUserModal.svelte";
   import AdminResetPasswordModal from "$lib/components/admin/AdminResetPasswordModal.svelte";
+  import ToggleSwitch from "$lib/components/ui/ToggleSwitch.svelte";
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -37,6 +42,21 @@
   let activeTab = $state<"general" | "users">(
     page.url.searchParams.get("tab") === "users" ? "users" : "general"
   );
+
+  // Settings form fields
+  let siteName = $state(data.siteSettings.siteName);
+  let siteTagline = $state(data.siteSettings.siteTagline);
+  let supportEmail = $state(data.siteSettings.supportEmail);
+  let currencyCode = $state(data.siteSettings.currencyCode);
+  let currencySymbol = $state(data.siteSettings.currencySymbol);
+  let defaultRadiusKm = $state(data.siteSettings.defaultRadiusKm);
+  let logoUrl = $state(data.siteSettings.logoUrl || "");
+  let faviconUrl = $state(data.siteSettings.faviconUrl || "");
+  let maintenanceMode = $state(data.siteSettings.maintenanceMode);
+  let allowRegistration = $state(data.siteSettings.allowRegistration);
+  let autoApproveClaims = $state(data.siteSettings.autoApproveClaims);
+  let requireReviewOtp = $state(data.siteSettings.requireReviewOtp);
+  let isSavingSettings = $state(false);
 
   // Search & Filters for User Directory
   let searchQuery = $state("");
@@ -507,78 +527,228 @@
 
   <!-- TAB 2: GENERAL SETTINGS -->
   {#if activeTab === "general"}
-    <div class="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-7 animate-in fade-in duration-200">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <div>
-          <h2 class="text-sm font-bold text-slate-900">Portal Branding & Metadata</h2>
-          <p class="text-xs text-slate-500">Global configurations for SEO, business notifications, and public directory headers.</p>
+    <form
+      method="POST"
+      action="?/updateSiteSettings"
+      use:enhance={() => {
+        isSavingSettings = true;
+        return async ({ update }) => {
+          isSavingSettings = false;
+          await update();
+        };
+      }}
+      class="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-8 animate-in fade-in duration-200"
+    >
+      <!-- Section 1: Portal Branding & Identity -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div>
+            <h2 class="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+              <Building2 class="h-4 w-4 text-slate-700" />
+              <span>Portal Branding & Identity</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Global branding for public storefronts, headers, and metadata.</p>
+          </div>
         </div>
 
-        {#if generalSavedNotice}
-          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold animate-in fade-in">
-            <Check class="h-3.5 w-3.5" /> Settings saved!
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="siteName" class="text-xs font-bold text-slate-700">Directory Brand Name</label>
+            <input
+              id="siteName"
+              name="siteName"
+              type="text"
+              required
+              bind:value={siteName}
+              placeholder="e.g. Pimple Saudagar Local Directory"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-medium"
+            />
           </div>
-        {/if}
-      </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="supportEmail" class="text-xs font-bold text-slate-700">Support / Contact Email</label>
+            <input
+              id="supportEmail"
+              name="supportEmail"
+              type="email"
+              required
+              bind:value={supportEmail}
+              placeholder="support@pimplesaudagar.local"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-medium"
+            />
+          </div>
+        </div>
+
         <div class="space-y-1.5">
-          <label for="dirName" class="text-xs font-bold text-slate-700">Directory Brand Name</label>
+          <label for="siteTagline" class="text-xs font-bold text-slate-700">Directory Tagline / Subtitle</label>
           <input
-            id="dirName"
+            id="siteTagline"
+            name="siteTagline"
             type="text"
-            value="Pimple Saudagar Local Directory"
-            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all font-medium"
-          />
-        </div>
-
-        <div class="space-y-1.5">
-          <label for="supportEmail" class="text-xs font-bold text-slate-700">Support / Contact Email</label>
-          <input
-            id="supportEmail"
-            type="email"
-            value="support@pimplesaudagar.local"
-            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all font-medium"
+            bind:value={siteTagline}
+            placeholder="Find verified local businesses, restaurants, clinics, and shops near you"
+            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-medium"
           />
         </div>
       </div>
 
+      <!-- Section 2: Localization, Currency & Search Defaults -->
       <div class="space-y-4 pt-2">
-        <div class="flex items-center gap-2 pb-2 border-b border-slate-100">
-          <ShieldCheck class="h-4 w-4 text-slate-700" />
-          <h3 class="text-sm font-bold text-slate-900">Operational Governance</h3>
+        <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
+          <Coins class="h-4 w-4 text-slate-700" />
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Localization & Search Defaults</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Pricing currency formatting and geographic discovery radius.</p>
+          </div>
         </div>
 
-        <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs font-bold text-slate-800">Auto-Approve Verified Merchant Claims</p>
-              <p class="text-[11px] text-slate-500">Fast-track ownership claims with verified GSTIN or official business domain.</p>
-            </div>
-            <input type="checkbox" checked class="h-4 w-4 rounded text-slate-900 focus:ring-slate-900 border-slate-300" />
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="space-y-1.5">
+            <label for="currencySymbol" class="text-xs font-bold text-slate-700">Currency Symbol</label>
+            <input
+              id="currencySymbol"
+              name="currencySymbol"
+              type="text"
+              required
+              bind:value={currencySymbol}
+              placeholder="₹"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-mono font-bold"
+            />
           </div>
 
-          <div class="border-t border-slate-200/60 pt-3 flex items-center justify-between">
-            <div>
-              <p class="text-xs font-bold text-slate-800">Require Phone OTP on Customer Reviews</p>
-              <p class="text-[11px] text-slate-500">Prevent spam submissions by enforcing WhatsApp / SMS OTP verification.</p>
-            </div>
-            <input type="checkbox" checked class="h-4 w-4 rounded text-slate-900 focus:ring-slate-900 border-slate-300" />
+          <div class="space-y-1.5">
+            <label for="currencyCode" class="text-xs font-bold text-slate-700">Currency ISO Code</label>
+            <input
+              id="currencyCode"
+              name="currencyCode"
+              type="text"
+              required
+              bind:value={currencyCode}
+              placeholder="INR"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-mono uppercase font-bold"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label for="defaultRadiusKm" class="text-xs font-bold text-slate-700">Search Radius (km)</label>
+            <input
+              id="defaultRadiusKm"
+              name="defaultRadiusKm"
+              type="number"
+              min="1"
+              max="200"
+              bind:value={defaultRadiusKm}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-medium"
+            />
           </div>
         </div>
       </div>
 
-      <div class="pt-4 border-t border-slate-100 flex items-center justify-end">
+      <!-- Section 3: Brand Assets & Media URLs -->
+      <div class="space-y-4 pt-2">
+        <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
+          <ImageIcon class="h-4 w-4 text-slate-700" />
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Brand Logo & Favicon Assets</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Public logos displayed on headers and browser tabs.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label for="logoUrl" class="text-xs font-bold text-slate-700">Header Logo URL (Optional)</label>
+            <input
+              id="logoUrl"
+              name="logoUrl"
+              type="url"
+              bind:value={logoUrl}
+              placeholder="https://.../logo.png"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-mono"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label for="faviconUrl" class="text-xs font-bold text-slate-700">Browser Favicon URL (Optional)</label>
+            <input
+              id="faviconUrl"
+              name="faviconUrl"
+              type="url"
+              bind:value={faviconUrl}
+              placeholder="https://.../favicon.ico"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-mono"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Operational Governance & System Switches -->
+      <div class="space-y-4 pt-2">
+        <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
+          <ShieldCheck class="h-4 w-4 text-slate-700" />
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-900">Operational Switches & Security Rules</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Live system flags controlling visitor routing and authentication.</p>
+          </div>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-4 divide-y divide-slate-200/60">
+          <!-- Switch 1: Maintenance Mode -->
+          <ToggleSwitch
+            name="maintenanceMode"
+            bind:checked={maintenanceMode}
+            label="Emergency Maintenance Mode"
+            description="When enabled, redirects all public traffic to the maintenance landing page. Directory administrators and staff retain full back-office access."
+          />
+
+          <!-- Switch 2: Public Registrations -->
+          <div class="pt-4">
+            <ToggleSwitch
+              name="allowRegistration"
+              bind:checked={allowRegistration}
+              label="Allow Public Merchant & User Registrations"
+              description="Enable new visitors and local merchants to register accounts and submit claims from the public storefront."
+            />
+          </div>
+
+          <!-- Switch 3: Auto Approve Claims -->
+          <div class="pt-4">
+            <ToggleSwitch
+              name="autoApproveClaims"
+              bind:checked={autoApproveClaims}
+              label="Auto-Approve Verified Merchant Claims"
+              description="Fast-track ownership claims with verified GSTIN, trade license, or official company email domain."
+            />
+          </div>
+
+          <!-- Switch 4: Require Review OTP -->
+          <div class="pt-4">
+            <ToggleSwitch
+              name="requireReviewOtp"
+              bind:checked={requireReviewOtp}
+              label="Require Phone / SMS Verification on Customer Reviews"
+              description="Prevent spam submissions and automated bot reviews by requiring OTP verification."
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Button -->
+      <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
         <button
-          type="button"
-          onclick={handleGeneralSave}
-          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+          type="submit"
+          disabled={isSavingSettings}
+          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-all cursor-pointer disabled:opacity-50"
         >
-          <Save class="h-4 w-4" />
-          <span>Save Directory Configuration</span>
+          {#if isSavingSettings}
+            <Loader2 class="h-4 w-4 animate-spin" />
+            <span>Saving Settings...</span>
+          {:else}
+            <Save class="h-4 w-4" />
+            <span>Save Directory Configuration</span>
+          {/if}
         </button>
       </div>
-    </div>
+    </form>
   {/if}
 </div>
 

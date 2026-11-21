@@ -1,6 +1,7 @@
 import type { Handle, HandleServerError } from "@sveltejs/kit";
 import { building } from "$app/environment";
 import { SESSION_COOKIE_NAME, validateSessionToken } from "$lib/auth/session";
+import { getSettings } from "$lib/services/settings.service";
 
 export const handle: Handle = async ({ event, resolve }) => {
   // 1. Session resolution
@@ -24,7 +25,30 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   const pathname = event.url.pathname;
 
-  // 2. Role-based Route Protection
+  // 2. Maintenance Mode Guard (blocks public traffic when maintenance mode is active)
+  if (!building && !pathname.startsWith("/admin") && pathname !== "/login" && pathname !== "/logout" && !pathname.startsWith("/_app")) {
+    try {
+      const settings = await getSettings();
+      if (settings.maintenanceMode) {
+        const isStaff = event.locals.user && ["admin", "moderator"].includes(event.locals.user.role);
+        if (!isStaff && pathname !== "/maintenance") {
+          return new Response(null, {
+            status: 303,
+            headers: { Location: "/maintenance" },
+          });
+        }
+      } else if (pathname === "/maintenance") {
+        return new Response(null, {
+          status: 303,
+          headers: { Location: "/" },
+        });
+      }
+    } catch {
+      // Fail open if settings check fails
+    }
+  }
+
+  // 3. Role-based Route Protection
   // Protected Admin Area: Requires admin or moderator role
   if (pathname.startsWith("/admin")) {
     if (!event.locals.user || !["admin", "moderator"].includes(event.locals.user.role)) {
@@ -45,7 +69,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
   }
 
-  // 3. Resolve request and apply security headers
+  // 4. Resolve request and apply security headers
   const response = await resolve(event);
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-Content-Type-Options", "nosniff");
@@ -58,7 +82,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 export const handleError: HandleServerError = ({ error, event, status, message }) => {
   const errMessage = error instanceof Error ? error.message : String(error);
   console.error(`[Server Error ${status}] at ${event.url.pathname}:`, error);
+
   return {
-    message: errMessage || message || "Internal Error",
+    message: errMessage || "An unexpected system error occurred",
   };
 };

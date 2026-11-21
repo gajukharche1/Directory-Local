@@ -4,13 +4,14 @@ import db from "$lib/db/client";
 import { UserRole, UserStatus } from "@prisma/client";
 import { hashPassword } from "$lib/auth/password";
 import { hasRole } from "$lib/auth/rbac";
+import { getSettings, updateSettings } from "$lib/services/settings.service";
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user || !hasRole(locals.user.role, UserRole.moderator)) {
     throw redirect(303, "/login?redirectTo=/admin/settings");
   }
 
-  const [users, stats] = await Promise.all([
+  const [users, stats, siteSettings] = await Promise.all([
     db.user.findMany({
       where: { deletedAt: null },
       select: {
@@ -38,6 +39,7 @@ export const load: PageServerLoad = async ({ locals }) => {
       db.user.count({ where: { deletedAt: null, role: { in: [UserRole.admin, UserRole.moderator] } } }),
       db.user.count({ where: { deletedAt: null, role: UserRole.owner } }),
     ]),
+    getSettings(),
   ]);
 
   return {
@@ -49,6 +51,7 @@ export const load: PageServerLoad = async ({ locals }) => {
       admins: stats[3],
       owners: stats[4],
     },
+    siteSettings,
     currentUser: locals.user,
   };
 };
@@ -287,6 +290,56 @@ export const actions: Actions = {
       };
     } catch (err: any) {
       return fail(500, { error: err?.message || "Failed to delete user." });
+    }
+  },
+
+  updateSiteSettings: async ({ request, locals }) => {
+    if (!locals.user || locals.user.role !== UserRole.admin) {
+      return fail(403, { error: "Admin role required to configure site settings." });
+    }
+
+    const formData = await request.formData();
+    const siteName = formData.get("siteName")?.toString().trim();
+    const siteTagline = formData.get("siteTagline")?.toString().trim() || "";
+    const supportEmail = formData.get("supportEmail")?.toString().trim() || "";
+    const currencyCode = formData.get("currencyCode")?.toString().trim() || "INR";
+    const currencySymbol = formData.get("currencySymbol")?.toString().trim() || "₹";
+    const radiusStr = formData.get("defaultRadiusKm")?.toString();
+    const defaultRadiusKm = radiusStr && !isNaN(parseInt(radiusStr, 10)) ? parseInt(radiusStr, 10) : 25;
+    const logoUrl = formData.get("logoUrl")?.toString().trim() || null;
+    const faviconUrl = formData.get("faviconUrl")?.toString().trim() || null;
+    const maintenanceMode = formData.get("maintenanceMode") === "true";
+    const allowRegistration = formData.get("allowRegistration") === "true";
+    const autoApproveClaims = formData.get("autoApproveClaims") === "true";
+    const requireReviewOtp = formData.get("requireReviewOtp") === "true";
+
+    if (!siteName) {
+      return fail(400, { error: "Directory brand name is required." });
+    }
+
+    try {
+      await updateSettings({
+        siteName,
+        siteTagline,
+        supportEmail,
+        currencyCode,
+        currencySymbol,
+        defaultRadiusKm,
+        logoUrl,
+        faviconUrl,
+        maintenanceMode,
+        allowRegistration,
+        autoApproveClaims,
+        requireReviewOtp,
+      });
+
+      return {
+        success: true,
+        action: "settings",
+        message: "Portal settings updated and synchronized across all views.",
+      };
+    } catch (err: any) {
+      return fail(500, { error: err?.message || "Failed to save directory settings." });
     }
   },
 };

@@ -488,3 +488,22 @@ model PersonalDataRequest {
   @@index([status])
   @@map("personal_data_requests")
 }
+
+model SiteSetting {
+  id                String   @id @default("default")
+  siteName          String   @default("Local Business Directory")
+  siteTagline       String   @default("Find the best verified local businesses near you")
+  logoUrl           String?
+  faviconUrl        String?
+  supportEmail      String   @default("support@pimplesaudagar.local")
+  currencyCode      String   @default("INR")
+  currencySymbol    String   @default("₹")
+  defaultRadiusKm   Int      @default(25)
+  maintenanceMode   Boolean  @default(false)
+  allowRegistration Boolean  @default(true)
+  autoApproveClaims Boolean  @default(false)
+  requireReviewOtp  Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+
+  @@map("site_settings")
+}
