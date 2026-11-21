@@ -18,14 +18,14 @@
 
   let { data }: { data: PageData } = $props();
 
-  const statusTabs = [
+  let statusTabs = $derived([
     { label: "All", value: "", count: data.totalCount },
     { label: "Published", value: "published", count: data.publishedCount },
     { label: "Pending", value: "pending_review", count: data.pendingCount },
     { label: "Draft", value: "draft", count: data.draftCount },
     { label: "Rejected", value: "rejected" },
     { label: "Archived", value: "archived" },
-  ];
+  ]);
 </script>
 
 <svelte:head>
