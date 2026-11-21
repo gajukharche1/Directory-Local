@@ -79,4 +79,72 @@ export const actions: Actions = {
       return fail(500, { error: err?.message || "Failed to delete category" });
     }
   },
+
+  bulkDelete: async ({ request, locals }) => {
+    if (!locals.user || locals.user.role !== "admin") {
+      return fail(403, { error: "Admin role required to delete categories" });
+    }
+
+    const formData = await request.formData();
+    const rawIds = formData.get("ids") as string;
+
+    if (!rawIds) {
+      return fail(400, { error: "Missing IDs for bulk delete" });
+    }
+
+    let ids: string[] = [];
+    try {
+      ids = JSON.parse(rawIds);
+    } catch {
+      return fail(400, { error: "Malformed IDs payload" });
+    }
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return fail(400, { error: "No categories selected" });
+    }
+
+    try {
+      const result = await db.category.deleteMany({
+        where: { id: { in: ids } },
+      });
+      return { success: true, count: result.count };
+    } catch (err: any) {
+      return fail(500, { error: err?.message || "Failed to bulk delete categories" });
+    }
+  },
+
+  bulkFeature: async ({ request, locals }) => {
+    if (!locals.user || (locals.user.role !== "admin" && locals.user.role !== "moderator")) {
+      return fail(403, { error: "Unauthorized access" });
+    }
+
+    const formData = await request.formData();
+    const rawIds = formData.get("ids") as string;
+    const featured = formData.get("featured") === "true";
+
+    if (!rawIds) {
+      return fail(400, { error: "Missing IDs for bulk update" });
+    }
+
+    let ids: string[] = [];
+    try {
+      ids = JSON.parse(rawIds);
+    } catch {
+      return fail(400, { error: "Malformed IDs payload" });
+    }
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return fail(400, { error: "No categories selected" });
+    }
+
+    try {
+      const result = await db.category.updateMany({
+        where: { id: { in: ids } },
+        data: { featuredOnHome: featured },
+      });
+      return { success: true, count: result.count };
+    } catch (err: any) {
+      return fail(500, { error: err?.message || "Failed to bulk update categories" });
+    }
+  },
 };
