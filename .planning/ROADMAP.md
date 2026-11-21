@@ -97,7 +97,7 @@ Plans:
 **Plans:** 1/1 plans planned  
 
 Plans:
-- [ ] 07-multi-entity-csv-import-opening-hours/PLAN.md
+- [x] 07-multi-entity-csv-import-opening-hours/PLAN.md
 
 ---
 
