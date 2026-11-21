@@ -1,11 +1,13 @@
+import { SvelteSet } from "svelte/reactivity";
+
 /**
  * Bulk Selection Engine (Svelte 5 Runes)
  * Provides O(1) Set-based selection state, contiguous Shift+Click range tracking,
  * and reactive indeterminate states for administrative tables.
  */
 export class BulkSelection<T = string> {
-  // Reactive Set of selected entity IDs
-  selected = $state<Set<string>>(new Set());
+  // Reactive Set of selected entity IDs using SvelteSet for fine-grained reactivity
+  selected = new SvelteSet<string>();
 
   // Tracks the index of the most recently clicked row for Shift+Click range calculations
   lastIndex = $state<number | null>(null);
@@ -14,6 +16,13 @@ export class BulkSelection<T = string> {
    * Returns current count of selected items
    */
   get count(): number {
+    return this.selected.size;
+  }
+
+  /**
+   * Alias for count to support selectedCount property lookups
+   */
+  get selectedCount(): number {
     return this.selected.size;
   }
 
@@ -33,40 +42,53 @@ export class BulkSelection<T = string> {
 
   /**
    * Toggles selection for a single row, supporting Shift+Click contiguous range selection
-   * @param id The entity ID being toggled
-   * @param currentIndex Row index in the displayed list
-   * @param shiftKey Whether the Shift key was held down
-   * @param allOrderedIds Ordered array of all visible row IDs
+   * Supports both positional parameters and options object.
    */
-  toggle(id: string, currentIndex?: number, shiftKey = false, allOrderedIds?: string[]) {
-    const next = new Set(this.selected);
+  toggle(
+    id: string,
+    currentIndexOrOptions?:
+      | number
+      | { currentIndex?: number; range?: boolean; shiftKey?: boolean; allIds?: string[]; allOrderedIds?: string[] },
+    shiftKey = false,
+    allOrderedIds?: string[]
+  ) {
+    let index: number | undefined;
+    let isShift = shiftKey;
+    let orderedList = allOrderedIds;
 
-    if (shiftKey && this.lastIndex !== null && currentIndex !== undefined && allOrderedIds) {
-      const start = Math.min(this.lastIndex, currentIndex);
-      const end = Math.max(this.lastIndex, currentIndex);
+    if (typeof currentIndexOrOptions === "object" && currentIndexOrOptions !== null) {
+      index = currentIndexOrOptions.currentIndex;
+      isShift = Boolean(currentIndexOrOptions.range || currentIndexOrOptions.shiftKey);
+      orderedList = currentIndexOrOptions.allIds || currentIndexOrOptions.allOrderedIds;
+    } else if (typeof currentIndexOrOptions === "number") {
+      index = currentIndexOrOptions;
+    }
+
+    if (isShift && this.lastIndex !== null && index !== undefined && orderedList) {
+      const start = Math.min(this.lastIndex, index);
+      const end = Math.max(this.lastIndex, index);
       const targetState = !this.selected.has(id);
 
       for (let i = start; i <= end; i++) {
-        const item = allOrderedIds[i];
+        const item = orderedList[i];
         if (item) {
           if (targetState) {
-            next.add(item);
+            this.selected.add(item);
           } else {
-            next.delete(item);
+            this.selected.delete(item);
           }
         }
       }
     } else {
-      if (next.has(id)) {
-        next.delete(id);
+      if (this.selected.has(id)) {
+        this.selected.delete(id);
       } else {
-        next.add(id);
+        this.selected.add(id);
       }
     }
 
-    this.selected = next;
-    if (currentIndex !== undefined) {
-      this.lastIndex = currentIndex;
+    if (index !== undefined) {
+      this.lastIndex = index;
     }
   }
 
@@ -86,18 +108,16 @@ export class BulkSelection<T = string> {
    * Selects all IDs in the visible list
    */
   selectAll(allOrderedIds: string[]) {
-    const next = new Set(this.selected);
     for (const id of allOrderedIds) {
-      next.add(id);
+      this.selected.add(id);
     }
-    this.selected = next;
   }
 
   /**
    * Clears all selections
    */
   deselectAll() {
-    this.selected = new Set();
+    this.selected.clear();
     this.lastIndex = null;
   }
 
@@ -114,7 +134,10 @@ export class BulkSelection<T = string> {
    */
   isIndeterminate(allOrderedIds: string[]): boolean {
     if (!allOrderedIds || allOrderedIds.length === 0) return false;
-    const selectedVisibleCount = allOrderedIds.filter((id) => this.selected.has(id)).length;
+    let selectedVisibleCount = 0;
+    for (const id of allOrderedIds) {
+      if (this.selected.has(id)) selectedVisibleCount++;
+    }
     return selectedVisibleCount > 0 && selectedVisibleCount < allOrderedIds.length;
   }
 }

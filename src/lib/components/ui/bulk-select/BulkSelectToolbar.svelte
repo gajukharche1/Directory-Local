@@ -1,12 +1,15 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { X } from "lucide-svelte";
+  import { X, Loader2 } from "lucide-svelte";
+  import type { BulkSelection } from "./bulk-select.svelte";
 
   let {
     count,
     selectedCount,
     totalCount,
     entityName = "listings",
+    isProcessing = false,
+    selection,
     ondeselect,
     onClear,
     children,
@@ -16,14 +19,18 @@
     selectedCount?: number;
     totalCount?: number;
     entityName?: string;
+    isProcessing?: boolean;
+    selection?: BulkSelection;
     ondeselect?: () => void;
     onClear?: () => void;
     children?: Snippet;
     actions?: Snippet;
   } = $props();
 
-  let effectiveCount = $derived(selectedCount ?? count ?? 0);
-  let handleDeselect = $derived(ondeselect ?? onClear ?? (() => {}));
+  let effectiveCount = $derived(
+    selection?.count ?? selection?.selectedCount ?? selectedCount ?? count ?? 0
+  );
+  let handleDeselect = $derived(ondeselect ?? onClear ?? (() => selection?.deselectAll()));
 
   $effect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -44,7 +51,11 @@
   >
     <!-- Selected Count Pill (Matching Screenshot) -->
     <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50/80 border border-blue-100 text-blue-700 text-xs font-medium shrink-0">
-      <span class="h-2 w-2 rounded-full bg-blue-600 shrink-0"></span>
+      {#if isProcessing}
+        <Loader2 class="h-3.5 w-3.5 text-blue-600 animate-spin shrink-0" />
+      {:else}
+        <span class="h-2 w-2 rounded-full bg-blue-600 shrink-0"></span>
+      {/if}
       <span class="text-blue-900/80">
         <strong class="font-bold text-blue-700">{effectiveCount}</strong>
         {#if totalCount && totalCount > 0}

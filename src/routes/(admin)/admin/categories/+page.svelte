@@ -305,7 +305,7 @@
 
   <!-- Bulk Selection Action Dock Toolbar -->
   <BulkSelectToolbar
-    selectedCount={selection.selectedCount}
+    selection={selection}
     totalCount={visibleIds.length}
     entityName="categories"
     onClear={() => selection.deselectAll()}

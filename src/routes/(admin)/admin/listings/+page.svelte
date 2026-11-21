@@ -23,7 +23,8 @@
     X,
     FileText,
     Archive,
-    XCircle
+    XCircle,
+    Loader2
   } from "lucide-svelte";
   import { createBulkSelection } from "$lib/components/ui/bulk-select/bulk-select.svelte";
   import BulkSelectCheckbox from "$lib/components/ui/bulk-select/BulkSelectCheckbox.svelte";
@@ -43,6 +44,7 @@
   let selectedCategoryId = $state("");
   let selectedLocationId = $state("");
   let isProcessing = $state(false);
+  let activeAction = $state<string | null>(null);
   let feedbackMessage = $state("");
 
   let isNavigating = $derived(Boolean(navigating.current));
@@ -414,9 +416,10 @@
 
   <!-- Bulk Selection Action Dock Toolbar -->
   <BulkSelectToolbar
-    selectedCount={selection.selectedCount}
-    totalCount={visibleIds.length}
+    selection={selection}
+    totalCount={data.listings.length}
     entityName="listings"
+    isProcessing={isProcessing || activeAction !== null}
     onClear={() => selection.deselectAll()}
   >
     {#snippet actions()}
@@ -425,7 +428,9 @@
         method="POST"
         action="?/bulkUpdateStatus"
         use:enhance={() => {
+          activeAction = "published";
           return async ({ result }) => {
+            activeAction = null;
             if (result.type === "success") {
               feedbackMessage = "Selected listings published successfully";
               selection.deselectAll();
@@ -439,10 +444,16 @@
         <input type="hidden" name="status" value="published" />
         <button
           type="submit"
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition-colors shadow-2xs cursor-pointer"
+          disabled={activeAction !== null || isProcessing}
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-medium text-xs transition-colors shadow-2xs cursor-pointer"
         >
-          <CheckCircle2 class="h-3.5 w-3.5" />
-          <span>Publish</span>
+          {#if activeAction === "published"}
+            <Loader2 class="h-3.5 w-3.5 animate-spin" />
+            <span>Publishing...</span>
+          {:else}
+            <CheckCircle2 class="h-3.5 w-3.5" />
+            <span>Publish</span>
+          {/if}
         </button>
       </form>
 
@@ -451,7 +462,9 @@
         method="POST"
         action="?/bulkUpdateStatus"
         use:enhance={() => {
+          activeAction = "draft";
           return async ({ result }) => {
+            activeAction = null;
             if (result.type === "success") {
               feedbackMessage = "Selected listings moved to draft";
               selection.deselectAll();
@@ -465,10 +478,16 @@
         <input type="hidden" name="status" value="draft" />
         <button
           type="submit"
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
+          disabled={activeAction !== null || isProcessing}
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 disabled:opacity-60 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
         >
-          <FileText class="h-3.5 w-3.5 text-slate-500" />
-          <span>Draft</span>
+          {#if activeAction === "draft"}
+            <Loader2 class="h-3.5 w-3.5 animate-spin" />
+            <span>Updating...</span>
+          {:else}
+            <FileText class="h-3.5 w-3.5 text-slate-500" />
+            <span>Draft</span>
+          {/if}
         </button>
       </form>
 
@@ -477,7 +496,9 @@
         method="POST"
         action="?/bulkUpdateStatus"
         use:enhance={() => {
+          activeAction = "archived";
           return async ({ result }) => {
+            activeAction = null;
             if (result.type === "success") {
               feedbackMessage = "Selected listings archived";
               selection.deselectAll();
@@ -491,10 +512,16 @@
         <input type="hidden" name="status" value="archived" />
         <button
           type="submit"
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
+          disabled={activeAction !== null || isProcessing}
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 disabled:opacity-60 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
         >
-          <Archive class="h-3.5 w-3.5 text-slate-500" />
-          <span>Archive</span>
+          {#if activeAction === "archived"}
+            <Loader2 class="h-3.5 w-3.5 animate-spin" />
+            <span>Archiving...</span>
+          {:else}
+            <Archive class="h-3.5 w-3.5 text-slate-500" />
+            <span>Archive</span>
+          {/if}
         </button>
       </form>
 
@@ -503,7 +530,9 @@
         method="POST"
         action="?/bulkUpdateStatus"
         use:enhance={() => {
+          activeAction = "rejected";
           return async ({ result }) => {
+            activeAction = null;
             if (result.type === "success") {
               feedbackMessage = "Selected listings marked as rejected";
               selection.deselectAll();
@@ -517,10 +546,16 @@
         <input type="hidden" name="status" value="rejected" />
         <button
           type="submit"
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-medium text-xs transition-colors cursor-pointer"
+          disabled={activeAction !== null || isProcessing}
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 disabled:opacity-60 border border-rose-200 text-rose-600 font-medium text-xs transition-colors cursor-pointer"
         >
-          <XCircle class="h-3.5 w-3.5 text-rose-500" />
-          <span>Reject</span>
+          {#if activeAction === "rejected"}
+            <Loader2 class="h-3.5 w-3.5 animate-spin" />
+            <span>Rejecting...</span>
+          {:else}
+            <XCircle class="h-3.5 w-3.5 text-rose-500" />
+            <span>Reject</span>
+          {/if}
         </button>
       </form>
 
@@ -528,7 +563,8 @@
       <button
         type="button"
         onclick={() => (showCategoryModal = true)}
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
+        disabled={activeAction !== null || isProcessing}
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 disabled:opacity-60 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
         title="Assign Category to selected listings"
       >
         <FolderTree class="h-3.5 w-3.5 text-indigo-500" />
@@ -539,7 +575,8 @@
       <button
         type="button"
         onclick={() => (showLocationModal = true)}
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
+        disabled={activeAction !== null || isProcessing}
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-50 disabled:opacity-60 border border-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
         title="Assign Location to selected listings"
       >
         <MapPin class="h-3.5 w-3.5 text-teal-600" />
@@ -550,7 +587,8 @@
       <button
         type="button"
         onclick={() => (showDeleteModal = true)}
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-red-500 hover:bg-red-600 text-white font-medium text-xs transition-colors shadow-2xs cursor-pointer"
+        disabled={activeAction !== null || isProcessing}
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white font-medium text-xs transition-colors shadow-2xs cursor-pointer"
       >
         <Trash2 class="h-3.5 w-3.5" />
         <span>Delete</span>
