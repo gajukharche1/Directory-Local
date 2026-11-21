@@ -31,6 +31,11 @@ export const actions: Actions = {
     const longitudeStr = formData.get("longitude")?.toString().trim();
     const featured = formData.get("featured") === "true" || formData.get("featured") === "on";
 
+    const seoTitle = formData.get("seoTitle")?.toString().trim() || null;
+    const seoDescription = formData.get("seoDescription")?.toString().trim() || null;
+    const seoKeywords = formData.get("seoKeywords")?.toString().trim() || null;
+    const ogImage = formData.get("ogImage")?.toString().trim() || null;
+
     if (!name) {
       return fail(400, { error: "Location name is required" });
     }
@@ -55,6 +60,11 @@ export const actions: Actions = {
           latitude: latitude && !isNaN(latitude) ? latitude : null,
           longitude: longitude && !isNaN(longitude) ? longitude : null,
           featured,
+          seoTitle,
+          seoDescription,
+          seoKeywords,
+          ogImage,
+          coverImage: ogImage,
         },
       });
 

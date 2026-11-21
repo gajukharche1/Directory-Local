@@ -192,6 +192,8 @@ model Category {
   listingCount   Int               @default(0)
   seoTitle       String?
   seoDescription String?
+  seoKeywords    String?
+  ogImage        String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 
@@ -218,6 +220,8 @@ model Location {
   listingCount   Int               @default(0)
   seoTitle       String?
   seoDescription String?
+  seoKeywords    String?
+  ogImage        String?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 

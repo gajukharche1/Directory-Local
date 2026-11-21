@@ -7,7 +7,8 @@
     Sparkles,
     Layers,
     Compass,
-    ExternalLink
+    ExternalLink,
+    Edit
   } from "lucide-svelte";
 
   let { data }: { data: PageData } = $props();
@@ -179,14 +180,23 @@
                   {/if}
                 </td>
                 <td class="py-3.5 px-5 text-right">
-                  <a
-                    href="/locations/{location.slug}"
-                    target="_blank"
-                    class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors inline-flex"
-                    title="View public location page"
-                  >
-                    <ExternalLink class="h-3.5 w-3.5" />
-                  </a>
+                  <div class="inline-flex items-center gap-1">
+                    <a
+                      href="/admin/locations/{location.id}"
+                      class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors inline-flex"
+                      title="Edit Location & SEO"
+                    >
+                      <Edit class="h-3.5 w-3.5" />
+                    </a>
+                    <a
+                      href="/locations/{location.slug}"
+                      target="_blank"
+                      class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors inline-flex"
+                      title="View public location page"
+                    >
+                      <ExternalLink class="h-3.5 w-3.5" />
+                    </a>
+                  </div>
                 </td>
               </tr>
             {/each}
