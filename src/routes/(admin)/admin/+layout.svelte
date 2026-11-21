@@ -12,7 +12,6 @@
     Image as ImageIcon,
     ChevronDown,
     Building2,
-    ShieldCheck,
     FolderTree,
     FolderPlus,
     MapPin,
@@ -21,8 +20,7 @@
     BarChart3,
     Settings,
     Layers,
-    ListOrdered,
-    ExternalLink
+    ListOrdered
   } from "lucide-svelte";
 
   let { data, children }: { data: LayoutData; children: Snippet } = $props();
@@ -54,6 +52,17 @@
   function toggleSection(sectionKey: "listing" | "categories" | "locations") {
     openSections[sectionKey] = !openSections[sectionKey];
   }
+
+  function isActive(href: string, exact = false) {
+    if (exact || href === "/admin") {
+      return page.url.pathname === href;
+    }
+    return page.url.pathname.startsWith(href);
+  }
+
+  function isGroupActive(prefix: string) {
+    return page.url.pathname.startsWith(prefix);
+  }
 </script>
 
 <div class="min-h-screen flex flex-col md:flex-row bg-[#F6F7FC] text-slate-800">
@@ -81,51 +90,48 @@
         
         <nav class="space-y-1">
           <!-- 1. Dashboard Link -->
-          {@const isDashboardActive = page.url.pathname === "/admin"}
           <a
             href="/admin"
-            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isDashboardActive
+            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isActive('/admin', true)
               ? 'bg-slate-900 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <Sliders class="h-4 w-4 shrink-0 {isDashboardActive ? 'text-white' : 'text-slate-400'}" />
+              <Sliders class="h-4 w-4 shrink-0 {isActive('/admin', true) ? 'text-white' : 'text-slate-400'}" />
               <span>Dashboard</span>
             </div>
-            {#if isDashboardActive}
+            {#if isActive('/admin', true)}
               <div class="h-1.5 w-1.5 rounded-full bg-emerald-400"></div>
             {/if}
           </a>
 
           <!-- 2. Moderation Queue Link -->
-          {@const isModerationActive = page.url.pathname.startsWith("/admin/moderation")}
           <a
             href="/admin/moderation"
-            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isModerationActive
+            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isActive('/admin/moderation')
               ? 'bg-slate-900 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <ShieldAlert class="h-4 w-4 shrink-0 {isModerationActive ? 'text-white' : 'text-slate-400'}" />
+              <ShieldAlert class="h-4 w-4 shrink-0 {isActive('/admin/moderation') ? 'text-white' : 'text-slate-400'}" />
               <span>Moderation Queue</span>
             </div>
-            {#if isModerationActive}
+            {#if isActive('/admin/moderation')}
               <div class="h-1.5 w-1.5 rounded-full bg-emerald-400"></div>
             {/if}
           </a>
 
           <!-- 3. Accordion Group: Listing -->
-          {@const isListingGroupActive = page.url.pathname.startsWith("/admin/listings")}
           <div>
             <button
               type="button"
               onclick={() => toggleSection("listing")}
-              class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-colors cursor-pointer {isListingGroupActive && !openSections.listing
+              class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-colors cursor-pointer {isGroupActive('/admin/listings') && !openSections.listing
                 ? 'bg-slate-100/80 text-slate-900 font-bold'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/60'}"
             >
               <div class="flex items-center gap-3">
-                <Store class="h-4 w-4 shrink-0 {isListingGroupActive ? 'text-slate-900' : 'text-slate-400'}" />
+                <Store class="h-4 w-4 shrink-0 {isGroupActive('/admin/listings') ? 'text-slate-900' : 'text-slate-400'}" />
                 <span>Listing</span>
               </div>
               <ChevronDown class="h-3.5 w-3.5 text-slate-400 transition-transform duration-200 {openSections.listing ? 'rotate-180' : ''}" />
@@ -135,25 +141,23 @@
             <div class="grid transition-all duration-200 ease-in-out {openSections.listing ? 'grid-rows-[1fr] opacity-100 mt-1 mb-1.5' : 'grid-rows-[0fr] opacity-0'}">
               <div class="overflow-hidden">
                 <div class="ml-4 pl-3.5 border-l-2 border-slate-200/80 space-y-1 py-0.5">
-                  {@const isAllListingActive = page.url.pathname === "/admin/listings"}
                   <a
                     href="/admin/listings"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isAllListingActive
+                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/listings', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <Layers class="h-3.5 w-3.5 shrink-0 {isAllListingActive ? 'text-white' : 'text-slate-400'}" />
+                    <Layers class="h-3.5 w-3.5 shrink-0 {isActive('/admin/listings', true) ? 'text-white' : 'text-slate-400'}" />
                     <span>All Listing</span>
                   </a>
 
-                  {@const isNewListingActive = page.url.pathname === "/admin/listings/new"}
                   <a
                     href="/admin/listings/new"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isNewListingActive
+                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/listings/new', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <PlusCircle class="h-3.5 w-3.5 shrink-0 {isNewListingActive ? 'text-white' : 'text-slate-400'}" />
+                    <PlusCircle class="h-3.5 w-3.5 shrink-0 {isActive('/admin/listings/new', true) ? 'text-white' : 'text-slate-400'}" />
                     <span>Add New Listing</span>
                   </a>
                 </div>
@@ -162,17 +166,16 @@
           </div>
 
           <!-- 4. Accordion Group: Categories -->
-          {@const isCategoriesGroupActive = page.url.pathname.startsWith("/admin/categories")}
           <div>
             <button
               type="button"
               onclick={() => toggleSection("categories")}
-              class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-colors cursor-pointer {isCategoriesGroupActive && !openSections.categories
+              class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-colors cursor-pointer {isGroupActive('/admin/categories') && !openSections.categories
                 ? 'bg-slate-100/80 text-slate-900 font-bold'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/60'}"
             >
               <div class="flex items-center gap-3">
-                <FolderTree class="h-4 w-4 shrink-0 {isCategoriesGroupActive ? 'text-slate-900' : 'text-slate-400'}" />
+                <FolderTree class="h-4 w-4 shrink-0 {isGroupActive('/admin/categories') ? 'text-slate-900' : 'text-slate-400'}" />
                 <span>Categories</span>
               </div>
               <ChevronDown class="h-3.5 w-3.5 text-slate-400 transition-transform duration-200 {openSections.categories ? 'rotate-180' : ''}" />
@@ -182,25 +185,23 @@
             <div class="grid transition-all duration-200 ease-in-out {openSections.categories ? 'grid-rows-[1fr] opacity-100 mt-1 mb-1.5' : 'grid-rows-[0fr] opacity-0'}">
               <div class="overflow-hidden">
                 <div class="ml-4 pl-3.5 border-l-2 border-slate-200/80 space-y-1 py-0.5">
-                  {@const isAllCatActive = page.url.pathname === "/admin/categories"}
                   <a
                     href="/admin/categories"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isAllCatActive
+                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/categories', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <ListOrdered class="h-3.5 w-3.5 shrink-0 {isAllCatActive ? 'text-white' : 'text-slate-400'}" />
+                    <ListOrdered class="h-3.5 w-3.5 shrink-0 {isActive('/admin/categories', true) ? 'text-white' : 'text-slate-400'}" />
                     <span>All Categories</span>
                   </a>
 
-                  {@const isNewCatActive = page.url.pathname === "/admin/categories/new"}
                   <a
                     href="/admin/categories/new"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isNewCatActive
+                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/categories/new', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <FolderPlus class="h-3.5 w-3.5 shrink-0 {isNewCatActive ? 'text-white' : 'text-slate-400'}" />
+                    <FolderPlus class="h-3.5 w-3.5 shrink-0 {isActive('/admin/categories/new', true) ? 'text-white' : 'text-slate-400'}" />
                     <span>Add New Category</span>
                   </a>
                 </div>
@@ -209,17 +210,16 @@
           </div>
 
           <!-- 5. Accordion Group: Locations -->
-          {@const isLocationsGroupActive = page.url.pathname.startsWith("/admin/locations")}
           <div>
             <button
               type="button"
               onclick={() => toggleSection("locations")}
-              class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-colors cursor-pointer {isLocationsGroupActive && !openSections.locations
+              class="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-colors cursor-pointer {isGroupActive('/admin/locations') && !openSections.locations
                 ? 'bg-slate-100/80 text-slate-900 font-bold'
                 : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100/60'}"
             >
               <div class="flex items-center gap-3">
-                <MapPin class="h-4 w-4 shrink-0 {isLocationsGroupActive ? 'text-slate-900' : 'text-slate-400'}" />
+                <MapPin class="h-4 w-4 shrink-0 {isGroupActive('/admin/locations') ? 'text-slate-900' : 'text-slate-400'}" />
                 <span>Locations</span>
               </div>
               <ChevronDown class="h-3.5 w-3.5 text-slate-400 transition-transform duration-200 {openSections.locations ? 'rotate-180' : ''}" />
@@ -229,25 +229,23 @@
             <div class="grid transition-all duration-200 ease-in-out {openSections.locations ? 'grid-rows-[1fr] opacity-100 mt-1 mb-1.5' : 'grid-rows-[0fr] opacity-0'}">
               <div class="overflow-hidden">
                 <div class="ml-4 pl-3.5 border-l-2 border-slate-200/80 space-y-1 py-0.5">
-                  {@const isAllLocActive = page.url.pathname === "/admin/locations"}
                   <a
                     href="/admin/locations"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isAllLocActive
+                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/locations', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <ListOrdered class="h-3.5 w-3.5 shrink-0 {isAllLocActive ? 'text-white' : 'text-slate-400'}" />
+                    <ListOrdered class="h-3.5 w-3.5 shrink-0 {isActive('/admin/locations', true) ? 'text-white' : 'text-slate-400'}" />
                     <span>All Locations</span>
                   </a>
 
-                  {@const isNewLocActive = page.url.pathname === "/admin/locations/new"}
                   <a
                     href="/admin/locations/new"
-                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isNewLocActive
+                    class="flex items-center gap-2.5 px-3 py-2 text-xs rounded-xl transition-all {isActive('/admin/locations/new', true)
                       ? 'bg-slate-900 text-white font-semibold shadow-xs'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/60 font-medium'}"
                   >
-                    <MapPinPlus class="h-3.5 w-3.5 shrink-0 {isNewLocActive ? 'text-white' : 'text-slate-400'}" />
+                    <MapPinPlus class="h-3.5 w-3.5 shrink-0 {isActive('/admin/locations/new', true) ? 'text-white' : 'text-slate-400'}" />
                     <span>Add New Location</span>
                   </a>
                 </div>
@@ -256,69 +254,65 @@
           </div>
 
           <!-- 6. CSV Import / Export -->
-          {@const isImportsActive = page.url.pathname.startsWith("/admin/imports")}
           <a
             href="/admin/imports"
-            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isImportsActive
+            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isActive('/admin/imports')
               ? 'bg-slate-900 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <Upload class="h-4 w-4 shrink-0 {isImportsActive ? 'text-white' : 'text-slate-400'}" />
+              <Upload class="h-4 w-4 shrink-0 {isActive('/admin/imports') ? 'text-white' : 'text-slate-400'}" />
               <span>CSV Import / Export</span>
             </div>
-            {#if isImportsActive}
+            {#if isActive('/admin/imports')}
               <div class="h-1.5 w-1.5 rounded-full bg-emerald-400"></div>
             {/if}
           </a>
 
           <!-- 7. Media Library -->
-          {@const isMediaActive = page.url.pathname.startsWith("/admin/media")}
           <a
             href="/admin/media"
-            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isMediaActive
+            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isActive('/admin/media')
               ? 'bg-slate-900 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <ImageIcon class="h-4 w-4 shrink-0 {isMediaActive ? 'text-white' : 'text-slate-400'}" />
+              <ImageIcon class="h-4 w-4 shrink-0 {isActive('/admin/media') ? 'text-white' : 'text-slate-400'}" />
               <span>Media Library</span>
             </div>
-            {#if isMediaActive}
+            {#if isActive('/admin/media')}
               <div class="h-1.5 w-1.5 rounded-full bg-emerald-400"></div>
             {/if}
           </a>
 
           <!-- 8. Directory Analytics -->
-          {@const isAnalyticsActive = page.url.pathname.startsWith("/admin/analytics")}
           <a
             href="/admin/analytics"
-            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isAnalyticsActive
+            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isActive('/admin/analytics')
               ? 'bg-slate-900 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <BarChart3 class="h-4 w-4 shrink-0 {isAnalyticsActive ? 'text-white' : 'text-slate-400'}" />
+              <BarChart3 class="h-4 w-4 shrink-0 {isActive('/admin/analytics') ? 'text-white' : 'text-slate-400'}" />
               <span>Directory Analytics</span>
             </div>
-            {#if isAnalyticsActive}
+            {#if isActive('/admin/analytics')}
               <div class="h-1.5 w-1.5 rounded-full bg-emerald-400"></div>
             {/if}
           </a>
 
           <!-- 9. Site & Settings -->
-          {@const isSettingsActive = page.url.pathname.startsWith("/admin/settings")}
           <a
             href="/admin/settings"
-            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isSettingsActive
+            class="flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all {isActive('/admin/settings')
               ? 'bg-slate-900 text-white shadow-sm'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'}"
           >
             <div class="flex items-center gap-3">
-              <Settings class="h-4 w-4 shrink-0 {isSettingsActive ? 'text-white' : 'text-slate-400'}" />
+              <Settings class="h-4 w-4 shrink-0 {isActive('/admin/settings') ? 'text-white' : 'text-slate-400'}" />
               <span>Site & Settings</span>
             </div>
-            {#if isSettingsActive}
+            {#if isActive('/admin/settings')}
               <div class="h-1.5 w-1.5 rounded-full bg-emerald-400"></div>
             {/if}
           </a>
