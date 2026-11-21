@@ -1,5 +1,6 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
+  import { goto } from "$app/navigation";
   import { page } from "$app/state";
   import type { PageData, ActionData } from "./$types";
   import {
@@ -47,6 +48,27 @@
   let activeTab = $state<"general" | "users">(
     page.url.searchParams.get("tab") === "users" ? "users" : "general"
   );
+
+  // Keep activeTab reactively synchronized whenever URL search params change
+  $effect(() => {
+    const tabParam = page.url.searchParams.get("tab");
+    activeTab = tabParam === "users" ? "users" : "general";
+  });
+
+  function switchTab(tab: "general" | "users") {
+    activeTab = tab;
+    const url = new URL(page.url);
+    if (tab === "users") {
+      url.searchParams.set("tab", "users");
+    } else {
+      url.searchParams.delete("tab");
+    }
+    goto(url.toString(), {
+      replaceState: true,
+      noScroll: true,
+      keepFocus: true,
+    });
+  }
 
   // Settings form fields
   let siteName = $state(data.siteSettings.siteName);
@@ -173,7 +195,7 @@
 </script>
 
 <svelte:head>
-  <title>User Directory & System Settings | Admin Console</title>
+  <title>{activeTab === "users" ? "User Dashboard" : "Site Settings"} | Admin Console</title>
 </svelte:head>
 
 <div class="max-w-6xl mx-auto space-y-6 pb-12">
@@ -183,7 +205,7 @@
       <h1 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
         {#if activeTab === "users"}
           <Users class="h-6 w-6 text-purple-600" />
-          <span>User Directory & Privileges</span>
+          <span>User Dashboard</span>
         {:else}
           <Settings class="h-6 w-6 text-slate-900" />
           <span>Site & Operational Settings</span>
@@ -202,8 +224,8 @@
     <div class="flex items-center gap-1.5 p-1.5 bg-slate-200/60 rounded-2xl w-fit">
       <button
         type="button"
-        onclick={() => (activeTab = "general")}
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all {activeTab === 'general'
+        onclick={() => switchTab("general")}
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer {activeTab === 'general'
           ? 'bg-white text-slate-900 shadow-sm'
           : 'text-slate-600 hover:text-slate-900'}"
       >
@@ -213,13 +235,13 @@
 
       <button
         type="button"
-        onclick={() => (activeTab = "users")}
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all {activeTab === 'users'
+        onclick={() => switchTab("users")}
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer {activeTab === 'users'
           ? 'bg-white text-slate-900 shadow-sm'
           : 'text-slate-600 hover:text-slate-900'}"
       >
         <Users class="h-4 w-4 {activeTab === 'users' ? 'text-purple-600' : 'text-slate-400'}" />
-        <span>User Directory</span>
+        <span>User</span>
         <span class="text-[10px] px-1.5 py-0.5 rounded-full {activeTab === 'users' ? 'bg-purple-100 text-purple-700' : 'bg-slate-300/60 text-slate-600'}">
           {data.stats.total}
         </span>

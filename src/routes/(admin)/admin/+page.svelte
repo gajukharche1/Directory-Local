@@ -208,7 +208,7 @@
       </div>
 
       <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-purple-700 group-hover:underline">
-        <span>User Directory & Privileges</span>
+        <span>User Dashboard</span>
         <ArrowRight class="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
       </div>
     </a>

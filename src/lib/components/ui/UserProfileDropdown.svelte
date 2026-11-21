@@ -219,7 +219,7 @@
             >
               <div class="flex items-center gap-2">
                 <Users class="h-3.5 w-3.5 text-purple-600" />
-                <span>User Directory & Privileges</span>
+                <span>User Dashboard</span>
               </div>
               <span class="text-[9px] bg-purple-50 text-purple-700 font-bold px-1.5 py-0.5 rounded">RBAC</span>
             </a>
