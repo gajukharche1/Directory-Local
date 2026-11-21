@@ -57,7 +57,7 @@ Plans:
 **Plans:** 1/1 plans planned  
 
 Plans:
-- [ ] 05-bulk-select-multi-action-utility/PLAN.md
+- [x] 05-bulk-select-multi-action-utility/PLAN.md
 
 ---
 
