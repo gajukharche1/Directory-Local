@@ -329,9 +329,9 @@
         type="submit"
         form="adminListingEditForm"
         disabled={isSaving}
-        class="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-md cursor-pointer disabled:opacity-50"
+        class="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-red-600 text-xs font-bold text-white hover:bg-red-700 transition-all shadow-md shadow-red-600/30 active:scale-95 cursor-pointer disabled:opacity-50"
       >
-        <Save class="h-3.5 w-3.5" />
+        <Save class="h-4 w-4" />
         <span>{isSaving ? "Saving..." : "Save & Update"}</span>
       </button>
     </div>
@@ -1355,7 +1355,7 @@
           type="submit"
           form="adminListingEditForm"
           disabled={isSaving}
-          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-600 text-xs font-bold text-white hover:bg-red-700 transition-all shadow-md shadow-red-600/30 active:scale-95 cursor-pointer disabled:opacity-50"
         >
           <Save class="h-3.5 w-3.5" />
           <span>{isSaving ? "Saving..." : "Save & Update"}</span>
