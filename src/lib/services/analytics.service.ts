@@ -1,278 +1,509 @@
 import db from "$lib/db/client";
 import { AnalyticsEventType } from "@prisma/client";
 import { createHash } from "node:crypto";
-import { env } from "$lib/config/env";
 
-export { AnalyticsEventType };
+const ANALYTICS_SECRET_SALT = process.env.AUTH_SECRET || "pimple-saudagar-local-analytics-salt-key-2026";
 
-export interface RecordEventInput {
+// Known bots & scrapers to filter out from analytics telemetry
+const BOT_USER_AGENTS = [
+  /bot/i,
+  /crawl/i,
+  /spider/i,
+  /slurp/i,
+  /headlesschrome/i,
+  /googlebot/i,
+  /bingbot/i,
+  /yandex/i,
+  /duckduckbot/i,
+  /baiduspider/i,
+  /facebookexternalhit/i,
+  /twitterbot/i,
+  /curl/i,
+  /wget/i,
+  /python-requests/i,
+];
+
+export interface TrackEventInput {
   listingId: string;
-  eventType: AnalyticsEventType;
-  ip: string;
-  userAgent: string;
+  eventType: AnalyticsEventType | keyof typeof AnalyticsEventType | string;
+  ip?: string;
+  userAgent?: string;
+  visitorHash?: string;
   referrer?: string | null;
-  deviceType?: string | null;
+  deviceType?: "mobile" | "desktop" | "tablet" | string | null;
 }
 
-export interface AnalyticsSummaryPoint {
-  date: string;
-  pageViews: number;
+export interface DailyChartPoint {
+  date: string; // YYYY-MM-DD
+  label: string; // e.g. "Nov 20"
+  views: number;
   uniqueVisitors: number;
-  actions: number;
+  ctas: number;
   calls: number;
-  whatsapp: number;
+  whatsapps: number;
   directions: number;
-  website: number;
+  websites: number;
   enquiries: number;
-  shares: number;
 }
 
-export interface ListingAnalyticsResult {
-  totalPageViews: number;
-  totalUniqueVisitors: number;
-  totalActions: number;
-  totalCalls: number;
-  totalWhatsApp: number;
-  totalDirections: number;
-  totalWebsite: number;
-  totalEnquiries: number;
-  totalShares: number;
-  conversionRate: number; // percentage (0 - 100)
-  trends: {
-    pageViewsDiff: number; // % delta vs previous period
-    uniqueVisitorsDiff: number;
-    actionsDiff: number;
-  };
-  timeSeries: AnalyticsSummaryPoint[];
-}
-
-export interface MerchantOverviewResult {
-  totalListings: number;
-  totalPageViews: number;
-  totalUniqueVisitors: number;
-  totalActions: number;
-  conversionRate: number;
-  topListings: Array<{
-    id: string;
-    title: string;
-    slug: string;
-    pageViews: number;
-    actions: number;
-    conversionRate: number;
-  }>;
-  timeSeries: AnalyticsSummaryPoint[];
-}
-
-export interface DirectoryGlobalAnalyticsResult {
-  totalTrackedListings: number;
-  totalPageViews: number;
-  totalUniqueVisitors: number;
-  totalActions: number;
-  conversionRate: number;
-  topPerformers: Array<{
-    id: string;
-    title: string;
-    slug: string;
-    ownerName: string | null;
-    pageViews: number;
-    actions: number;
-    conversionRate: number;
-  }>;
-  actionBreakdown: {
+export interface AnalyticsSummaryResult {
+  listingId?: string;
+  periodDays: number;
+  totals: {
+    views: number;
+    uniqueVisitors: number;
+    ctas: number;
     calls: number;
-    whatsapp: number;
+    whatsapps: number;
     directions: number;
-    website: number;
+    websites: number;
     enquiries: number;
     shares: number;
+    conversionRate: number; // percentage (0 - 100)
   };
-  timeSeries: AnalyticsSummaryPoint[];
+  deltas: {
+    viewsPct: number;
+    uniqueVisitorsPct: number;
+    ctasPct: number;
+    conversionRatePct: number;
+  };
+  timeSeries: DailyChartPoint[];
+}
+
+export interface ListingLeaderboardItem {
+  id: string;
+  title: string;
+  slug: string;
+  locality: string | null;
+  categoryName?: string;
+  views: number;
+  uniqueVisitors: number;
+  ctas: number;
+  calls: number;
+  whatsapps: number;
+  conversionRate: number;
+}
+
+/**
+ * DPDP-Compliant Salted Visitor Hash
+ * Derives a deterministic daily hash from (IP + UserAgent + daily rotating salt).
+ * Zero raw IPs are persisted, and hashes naturally expire/reset every midnight.
+ */
+export function generateVisitorHash(ip: string, userAgent: string, date: Date = new Date()): string {
+  const dateKey = date.toISOString().slice(0, 10); // YYYY-MM-DD
+  const rawData = `${ip || "0.0.0.0"}:${userAgent || "unknown"}:${dateKey}:${ANALYTICS_SECRET_SALT}`;
+  return createHash("sha256").update(rawData).digest("hex").slice(0, 32);
+}
+
+/**
+ * Returns midnight UTC for consistent day-based database aggregation
+ */
+export function getUtcMidnight(date: Date = new Date()): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+/**
+ * Detects whether a User-Agent is a known web crawler or search bot
+ */
+export function isBot(userAgent: string | undefined): boolean {
+  if (!userAgent) return false;
+  return BOT_USER_AGENTS.some((pattern) => pattern.test(userAgent));
+}
+
+/**
+ * Map flexible event type strings to Prisma AnalyticsEventType enum
+ */
+export function normalizeEventType(type: string): AnalyticsEventType | null {
+  const upper = type.toUpperCase().trim();
+  switch (upper) {
+    case "PAGE_VIEW":
+    case "VIEW":
+      return AnalyticsEventType.PAGE_VIEW;
+    case "CALL":
+    case "PHONE":
+      return AnalyticsEventType.CALL;
+    case "WHATSAPP":
+    case "CHAT":
+      return AnalyticsEventType.WHATSAPP;
+    case "DIRECTIONS":
+    case "MAP":
+      return AnalyticsEventType.DIRECTIONS;
+    case "WEBSITE":
+    case "URL":
+      return AnalyticsEventType.WEBSITE;
+    case "ENQUIRY":
+    case "LEAD":
+      return AnalyticsEventType.ENQUIRY;
+    case "SHARE":
+      return AnalyticsEventType.SHARE;
+    default:
+      return null;
+  }
 }
 
 export class AnalyticsService {
   /**
-   * Generates a DPDP Act 2023 compliant salted hash.
-   * Uses rotating daily salt + secret so the same visitor is deduplicated within 24h
-   * but cannot be tracked across days or reverse-engineered to raw IP.
+   * Records a user telemetry action (view or CTA) and rolls it into daily summary
    */
-  static generateVisitorHash(ip: string, userAgent: string, date: Date = new Date()): string {
-    const saltSecret = env.JWT_SECRET || "dpdp_local_salt_secret";
-    const dateStr = date.toISOString().slice(0, 10); // YYYY-MM-DD
-    const rawData = `${ip.trim()}::${userAgent.trim()}::${saltSecret}::${dateStr}`;
-    return createHash("sha256").update(rawData).digest("hex").slice(0, 32);
-  }
+  static async recordEvent(input: TrackEventInput): Promise<{ success: boolean; eventId?: string }> {
+    const { listingId, ip = "127.0.0.1", userAgent = "", referrer, deviceType } = input;
 
-  /**
-   * Ingests a telemetry event asynchronously and atomically rollups into daily summaries
-   */
-  static async recordEvent(input: RecordEventInput): Promise<void> {
-    const now = new Date();
-    const visitorHash = this.generateVisitorHash(input.ip, input.userAgent, now);
-
-    // Compute UTC midnight of current day
-    const todayMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-
-    // Insert raw event
-    await db.analyticsEvent.create({
-      data: {
-        listingId: input.listingId,
-        eventType: input.eventType,
-        visitorHash,
-        referrer: input.referrer ? input.referrer.slice(0, 255) : null,
-        deviceType: input.deviceType ? input.deviceType.slice(0, 50) : null,
-        createdAt: now,
-      },
-    });
-
-    // Check if this visitor has already visited this listing today (for unique visitor counting)
-    let isFirstUniqueVisitToday = false;
-    if (input.eventType === AnalyticsEventType.PAGE_VIEW) {
-      const priorCount = await db.analyticsEvent.count({
-        where: {
-          listingId: input.listingId,
-          eventType: AnalyticsEventType.PAGE_VIEW,
-          visitorHash,
-          createdAt: {
-            gte: todayMidnight,
-            lt: now,
-          },
-        },
-      });
-      isFirstUniqueVisitToday = priorCount <= 1; // 1 means only the row we just inserted
+    // Filter bots from skewing merchant visibility metrics
+    if (isBot(userAgent)) {
+      return { success: false };
     }
 
-    // Atomically upsert the daily summary rollup
-    const isView = input.eventType === AnalyticsEventType.PAGE_VIEW;
-    const isCall = input.eventType === AnalyticsEventType.CALL;
-    const isWA = input.eventType === AnalyticsEventType.WHATSAPP;
-    const isDir = input.eventType === AnalyticsEventType.DIRECTIONS;
-    const isWeb = input.eventType === AnalyticsEventType.WEBSITE;
-    const isEnq = input.eventType === AnalyticsEventType.ENQUIRY;
-    const isShare = input.eventType === AnalyticsEventType.SHARE;
+    const eventType = normalizeEventType(String(input.eventType));
+    if (!eventType) {
+      return { success: false };
+    }
 
-    await db.analyticsDailySummary.upsert({
-      where: {
-        listingId_date: {
-          listingId: input.listingId,
-          date: todayMidnight,
+    const todayMidnight = getUtcMidnight();
+    const visitorHash = input.visitorHash || generateVisitorHash(ip, userAgent, todayMidnight);
+
+    try {
+      // 1. Insert raw event stream record
+      const event = await db.analyticsEvent.create({
+        data: {
+          listingId,
+          eventType,
+          visitorHash,
+          referrer: referrer ? referrer.slice(0, 500) : null,
+          deviceType: deviceType || "desktop",
         },
-      },
-      create: {
-        listingId: input.listingId,
-        date: todayMidnight,
-        pageViews: isView ? 1 : 0,
-        uniqueVisitors: isView && isFirstUniqueVisitToday ? 1 : 0,
-        callClicks: isCall ? 1 : 0,
-        whatsappClicks: isWA ? 1 : 0,
-        directionsClicks: isDir ? 1 : 0,
-        websiteClicks: isWeb ? 1 : 0,
-        enquiries: isEnq ? 1 : 0,
-        shares: isShare ? 1 : 0,
-      },
-      update: {
-        ...(isView && { pageViews: { increment: 1 } }),
-        ...(isView && isFirstUniqueVisitToday && { uniqueVisitors: { increment: 1 } }),
-        ...(isCall && { callClicks: { increment: 1 } }),
-        ...(isWA && { whatsappClicks: { increment: 1 } }),
-        ...(isDir && { directionsClicks: { increment: 1 } }),
-        ...(isWeb && { websiteClicks: { increment: 1 } }),
-        ...(isEnq && { enquiries: { increment: 1 } }),
-        ...(isShare && { shares: { increment: 1 } }),
-      },
-    });
+      });
+
+      // 2. Determine unique visitor status for views
+      let isNewDailyUnique = false;
+      if (eventType === AnalyticsEventType.PAGE_VIEW) {
+        const priorViewCount = await db.analyticsEvent.count({
+          where: {
+            listingId,
+            eventType: AnalyticsEventType.PAGE_VIEW,
+            visitorHash,
+            createdAt: {
+              gte: todayMidnight,
+              lt: new Date(todayMidnight.getTime() + 24 * 60 * 60 * 1000),
+            },
+          },
+        });
+        // If priorViewCount is 1, this current insert was the first view today
+        isNewDailyUnique = priorViewCount <= 1;
+      }
+
+      // 3. Atomically upsert daily summary rollup
+      await db.analyticsDailySummary.upsert({
+        where: {
+          listingId_date: {
+            listingId,
+            date: todayMidnight,
+          },
+        },
+        create: {
+          listingId,
+          date: todayMidnight,
+          pageViews: eventType === AnalyticsEventType.PAGE_VIEW ? 1 : 0,
+          uniqueVisitors: isNewDailyUnique ? 1 : 0,
+          callClicks: eventType === AnalyticsEventType.CALL ? 1 : 0,
+          whatsappClicks: eventType === AnalyticsEventType.WHATSAPP ? 1 : 0,
+          directionsClicks: eventType === AnalyticsEventType.DIRECTIONS ? 1 : 0,
+          websiteClicks: eventType === AnalyticsEventType.WEBSITE ? 1 : 0,
+          enquiries: eventType === AnalyticsEventType.ENQUIRY ? 1 : 0,
+          shares: eventType === AnalyticsEventType.SHARE ? 1 : 0,
+        },
+        update: {
+          ...(eventType === AnalyticsEventType.PAGE_VIEW && {
+            pageViews: { increment: 1 },
+            ...(isNewDailyUnique && { uniqueVisitors: { increment: 1 } }),
+          }),
+          ...(eventType === AnalyticsEventType.CALL && { callClicks: { increment: 1 } }),
+          ...(eventType === AnalyticsEventType.WHATSAPP && { whatsappClicks: { increment: 1 } }),
+          ...(eventType === AnalyticsEventType.DIRECTIONS && { directionsClicks: { increment: 1 } }),
+          ...(eventType === AnalyticsEventType.WEBSITE && { websiteClicks: { increment: 1 } }),
+          ...(eventType === AnalyticsEventType.ENQUIRY && { enquiries: { increment: 1 } }),
+          ...(eventType === AnalyticsEventType.SHARE && { shares: { increment: 1 } }),
+        },
+      });
+
+      return { success: true, eventId: event.id };
+    } catch (err) {
+      console.error("Failed to record analytics event:", err);
+      return { success: false };
+    }
   }
 
   /**
-   * Retrieves analytics data for a specific listing over the specified lookback window
+   * Generates time series and totals for a single listing
    */
-  static async getListingAnalytics(listingId: string, days = 30): Promise<ListingAnalyticsResult> {
-    const now = new Date();
-    const currentEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-    const currentStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - days + 1));
-    const previousStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - days * 2 + 1));
+  static async getListingAnalytics(listingId: string, days = 30): Promise<AnalyticsSummaryResult> {
+    const today = getUtcMidnight();
+    const startDate = new Date(today.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+    const prevStartDate = new Date(startDate.getTime() - days * 24 * 60 * 60 * 1000);
 
-    // Fetch daily summaries for current and previous periods
-    const [currentSummaries, previousSummaries] = await Promise.all([
+    // Current period summaries
+    const currentSummaries = await db.analyticsDailySummary.findMany({
+      where: {
+        listingId,
+        date: { gte: startDate, lte: today },
+      },
+      orderBy: { date: "asc" },
+    });
+
+    // Previous period summaries for percentage delta calculations
+    const prevSummaries = await db.analyticsDailySummary.findMany({
+      where: {
+        listingId,
+        date: { gte: prevStartDate, lt: startDate },
+      },
+    });
+
+    return this.buildAnalyticsSummary(currentSummaries, prevSummaries, days, startDate, today, listingId);
+  }
+
+  /**
+   * Generates aggregated metrics across all listings owned by a merchant
+   */
+  static async getMerchantOverview(ownerId: string, days = 30): Promise<AnalyticsSummaryResult & { topListings: ListingLeaderboardItem[] }> {
+    const listings = await db.listing.findMany({
+      where: { ownerId },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        locality: true,
+        categories: { select: { category: { select: { name: true } } }, take: 1 },
+      },
+    });
+
+    const listingIds = listings.map((l) => l.id);
+    if (listingIds.length === 0) {
+      const emptyResult = this.buildEmptySummary(days);
+      return { ...emptyResult, topListings: [] };
+    }
+
+    const today = getUtcMidnight();
+    const startDate = new Date(today.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+    const prevStartDate = new Date(startDate.getTime() - days * 24 * 60 * 60 * 1000);
+
+    const [currentSummaries, prevSummaries] = await Promise.all([
       db.analyticsDailySummary.findMany({
         where: {
-          listingId,
-          date: { gte: currentStart, lt: currentEnd },
+          listingId: { in: listingIds },
+          date: { gte: startDate, lte: today },
         },
         orderBy: { date: "asc" },
       }),
       db.analyticsDailySummary.findMany({
         where: {
-          listingId,
-          date: { gte: previousStart, lt: currentStart },
+          listingId: { in: listingIds },
+          date: { gte: prevStartDate, lt: startDate },
         },
       }),
     ]);
 
-    // Build day map for zero-filling time series
-    const summaryMap = new Map<string, (typeof currentSummaries)[0]>();
+    const summary = this.buildAnalyticsSummary(currentSummaries, prevSummaries, days, startDate, today);
+
+    // Build top listings leaderboard
+    const listingTotalsMap = new Map<string, { views: number; uniqueVisitors: number; calls: number; whatsapps: number; ctas: number }>();
     for (const s of currentSummaries) {
-      summaryMap.set(s.date.toISOString().slice(0, 10), s);
+      const existing = listingTotalsMap.get(s.listingId) || { views: 0, uniqueVisitors: 0, calls: 0, whatsapps: 0, ctas: 0 };
+      const ctas = s.callClicks + s.whatsappClicks + s.directionsClicks + s.websiteClicks + s.enquiries;
+      existing.views += s.pageViews;
+      existing.uniqueVisitors += s.uniqueVisitors;
+      existing.calls += s.callClicks;
+      existing.whatsapps += s.whatsappClicks;
+      existing.ctas += ctas;
+      listingTotalsMap.set(s.listingId, existing);
     }
 
-    const timeSeries: AnalyticsSummaryPoint[] = [];
-    let totalPageViews = 0;
-    let totalUniqueVisitors = 0;
-    let totalCalls = 0;
-    let totalWhatsApp = 0;
-    let totalDirections = 0;
-    let totalWebsite = 0;
-    let totalEnquiries = 0;
-    let totalShares = 0;
+    const topListings: ListingLeaderboardItem[] = listings
+      .map((l) => {
+        const stats = listingTotalsMap.get(l.id) || { views: 0, uniqueVisitors: 0, calls: 0, whatsapps: 0, ctas: 0 };
+        const convRate = stats.uniqueVisitors > 0 ? Number(((stats.ctas / stats.uniqueVisitors) * 100).toFixed(1)) : 0;
+        return {
+          id: l.id,
+          title: l.title,
+          slug: l.slug,
+          locality: l.locality,
+          categoryName: l.categories[0]?.category?.name || "Business",
+          views: stats.views,
+          uniqueVisitors: stats.uniqueVisitors,
+          ctas: stats.ctas,
+          calls: stats.calls,
+          whatsapps: stats.whatsapps,
+          conversionRate: convRate,
+        };
+      })
+      .sort((a, b) => b.ctas - a.ctas || b.views - a.views);
 
+    return { ...summary, topListings };
+  }
+
+  /**
+   * Directory-wide analytics and platform performance leaderboard for administrators
+   */
+  static async getDirectoryAnalytics(days = 30): Promise<AnalyticsSummaryResult & { topListings: ListingLeaderboardItem[]; totalTrackedListings: number }> {
+    const today = getUtcMidnight();
+    const startDate = new Date(today.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+    const prevStartDate = new Date(startDate.getTime() - days * 24 * 60 * 60 * 1000);
+
+    const [currentSummaries, prevSummaries, publishedListings] = await Promise.all([
+      db.analyticsDailySummary.findMany({
+        where: { date: { gte: startDate, lte: today } },
+        orderBy: { date: "asc" },
+      }),
+      db.analyticsDailySummary.findMany({
+        where: { date: { gte: prevStartDate, lt: startDate } },
+      }),
+      db.listing.findMany({
+        where: { status: "published" },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          locality: true,
+          categories: { select: { category: { select: { name: true } } }, take: 1 },
+        },
+      }),
+    ]);
+
+    const summary = this.buildAnalyticsSummary(currentSummaries, prevSummaries, days, startDate, today);
+
+    // Group current metrics by listing
+    const listingTotalsMap = new Map<string, { views: number; uniqueVisitors: number; calls: number; whatsapps: number; ctas: number }>();
+    for (const s of currentSummaries) {
+      const existing = listingTotalsMap.get(s.listingId) || { views: 0, uniqueVisitors: 0, calls: 0, whatsapps: 0, ctas: 0 };
+      const ctas = s.callClicks + s.whatsappClicks + s.directionsClicks + s.websiteClicks + s.enquiries;
+      existing.views += s.pageViews;
+      existing.uniqueVisitors += s.uniqueVisitors;
+      existing.calls += s.callClicks;
+      existing.whatsapps += s.whatsappClicks;
+      existing.ctas += ctas;
+      listingTotalsMap.set(s.listingId, existing);
+    }
+
+    const listingMap = new Map(publishedListings.map((l) => [l.id, l]));
+
+    const topListings: ListingLeaderboardItem[] = Array.from(listingTotalsMap.entries())
+      .map(([id, stats]) => {
+        const item = listingMap.get(id);
+        const convRate = stats.uniqueVisitors > 0 ? Number(((stats.ctas / stats.uniqueVisitors) * 100).toFixed(1)) : 0;
+        return {
+          id,
+          title: item?.title || "Listing #" + id.slice(0, 8),
+          slug: item?.slug || "",
+          locality: item?.locality || null,
+          categoryName: item?.categories[0]?.category?.name || "Business",
+          views: stats.views,
+          uniqueVisitors: stats.uniqueVisitors,
+          ctas: stats.ctas,
+          calls: stats.calls,
+          whatsapps: stats.whatsapps,
+          conversionRate: convRate,
+        };
+      })
+      .sort((a, b) => b.ctas - a.ctas || b.views - a.views)
+      .slice(0, 10);
+
+    return {
+      ...summary,
+      topListings,
+      totalTrackedListings: listingTotalsMap.size,
+    };
+  }
+
+  /**
+   * Helper to consolidate summaries, zero-fill daily timeseries, and calculate deltas
+   */
+  private static buildAnalyticsSummary(
+    currentSummaries: any[],
+    prevSummaries: any[],
+    days: number,
+    startDate: Date,
+    endDate: Date,
+    listingId?: string
+  ): AnalyticsSummaryResult {
+    // Current period totals
+    let views = 0;
+    let uniqueVisitors = 0;
+    let calls = 0;
+    let whatsapps = 0;
+    let directions = 0;
+    let websites = 0;
+    let enquiries = 0;
+    let shares = 0;
+
+    // Date bucket map for time series rollup
+    const dateMap = new Map<string, DailyChartPoint>();
+
+    // Pre-populate every day in the range with zeros
     for (let i = 0; i < days; i++) {
-      const d = new Date(currentStart);
-      d.setUTCDate(d.getUTCDate() + i);
-      const dateKey = d.toISOString().slice(0, 10);
-      const item = summaryMap.get(dateKey);
-
-      const pViews = item?.pageViews || 0;
-      const uVisitors = item?.uniqueVisitors || 0;
-      const calls = item?.callClicks || 0;
-      const wa = item?.whatsappClicks || 0;
-      const dirs = item?.directionsClicks || 0;
-      const web = item?.websiteClicks || 0;
-      const enqs = item?.enquiries || 0;
-      const shs = item?.shares || 0;
-      const actions = calls + wa + dirs + web + enqs;
-
-      totalPageViews += pViews;
-      totalUniqueVisitors += uVisitors;
-      totalCalls += calls;
-      totalWhatsApp += wa;
-      totalDirections += dirs;
-      totalWebsite += web;
-      totalEnquiries += enqs;
-      totalShares += shs;
-
-      timeSeries.push({
-        date: dateKey,
-        pageViews: pViews,
-        uniqueVisitors: uVisitors,
-        actions,
-        calls,
-        whatsapp: wa,
-        directions: dirs,
-        website: web,
-        enquiries: enqs,
-        shares: shs,
+      const d = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+      const dateStr = d.toISOString().slice(0, 10);
+      const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      dateMap.set(dateStr, {
+        date: dateStr,
+        label,
+        views: 0,
+        uniqueVisitors: 0,
+        ctas: 0,
+        calls: 0,
+        whatsapps: 0,
+        directions: 0,
+        websites: 0,
+        enquiries: 0,
       });
     }
 
-    const totalActions = totalCalls + totalWhatsApp + totalDirections + totalWebsite + totalEnquiries;
-    const conversionRate = totalUniqueVisitors > 0 ? Number(((totalActions / totalUniqueVisitors) * 100).toFixed(1)) : 0;
+    for (const row of currentSummaries) {
+      views += row.pageViews;
+      uniqueVisitors += row.uniqueVisitors;
+      calls += row.callClicks;
+      whatsapps += row.whatsappClicks;
+      directions += row.directionsClicks;
+      websites += row.websiteClicks;
+      enquiries += row.enquiries;
+      shares += row.shares;
 
-    // Previous period aggregates for trend calculation
-    const prevPageViews = previousSummaries.reduce((acc, s) => acc + s.pageViews, 0);
-    const prevUniqueVisitors = previousSummaries.reduce((acc, s) => acc + s.uniqueVisitors, 0);
-    const prevActions = previousSummaries.reduce(
-      (acc, s) => acc + s.callClicks + s.whatsappClicks + s.directionsClicks + s.websiteClicks + s.enquiries,
-      0
-    );
+      const dateStr = new Date(row.date).toISOString().slice(0, 10);
+      const bucket = dateMap.get(dateStr);
+      if (bucket) {
+        const ctas = row.callClicks + row.whatsappClicks + row.directionsClicks + row.websiteClicks + row.enquiries;
+        bucket.views += row.pageViews;
+        bucket.uniqueVisitors += row.uniqueVisitors;
+        bucket.ctas += ctas;
+        bucket.calls += row.callClicks;
+        bucket.whatsapps += row.whatsappClicks;
+        bucket.directions += row.directionsClicks;
+        bucket.websites += row.websiteClicks;
+        bucket.enquiries += row.enquiries;
+      }
+    }
+
+    const ctas = calls + whatsapps + directions + websites + enquiries;
+    const conversionRate = uniqueVisitors > 0 ? Number(((ctas / uniqueVisitors) * 100).toFixed(1)) : 0;
+
+    // Previous period totals for delta calculation
+    let prevViews = 0;
+    let prevUniqueVisitors = 0;
+    let prevCalls = 0;
+    let prevWhatsapps = 0;
+    let prevDirections = 0;
+    let prevWebsites = 0;
+    let prevEnquiries = 0;
+
+    for (const row of prevSummaries) {
+      prevViews += row.pageViews;
+      prevUniqueVisitors += row.uniqueVisitors;
+      prevCalls += row.callClicks;
+      prevWhatsapps += row.whatsappClicks;
+      prevDirections += row.directionsClicks;
+      prevWebsites += row.websiteClicks;
+      prevEnquiries += row.enquiries;
+    }
+
+    const prevCtas = prevCalls + prevWhatsapps + prevDirections + prevWebsites + prevEnquiries;
+    const prevConvRate = prevUniqueVisitors > 0 ? (prevCtas / prevUniqueVisitors) * 100 : 0;
 
     const calcDelta = (curr: number, prev: number) => {
       if (prev === 0) return curr > 0 ? 100 : 0;
@@ -280,280 +511,72 @@ export class AnalyticsService {
     };
 
     return {
-      totalPageViews,
-      totalUniqueVisitors,
-      totalActions,
-      totalCalls,
-      totalWhatsApp,
-      totalDirections,
-      totalWebsite,
-      totalEnquiries,
-      totalShares,
-      conversionRate,
-      trends: {
-        pageViewsDiff: calcDelta(totalPageViews, prevPageViews),
-        uniqueVisitorsDiff: calcDelta(totalUniqueVisitors, prevUniqueVisitors),
-        actionsDiff: calcDelta(totalActions, prevActions),
+      listingId,
+      periodDays: days,
+      totals: {
+        views,
+        uniqueVisitors,
+        ctas,
+        calls,
+        whatsapps,
+        directions,
+        websites,
+        enquiries,
+        shares,
+        conversionRate,
+      },
+      deltas: {
+        viewsPct: calcDelta(views, prevViews),
+        uniqueVisitorsPct: calcDelta(uniqueVisitors, prevUniqueVisitors),
+        ctasPct: calcDelta(ctas, prevCtas),
+        conversionRatePct: Number((conversionRate - prevConvRate).toFixed(1)),
+      },
+      timeSeries: Array.from(dateMap.values()),
+    };
+  }
+
+  private static buildEmptySummary(days: number): AnalyticsSummaryResult {
+    const today = getUtcMidnight();
+    const startDate = new Date(today.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+    const timeSeries: DailyChartPoint[] = [];
+
+    for (let i = 0; i < days; i++) {
+      const d = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+      timeSeries.push({
+        date: d.toISOString().slice(0, 10),
+        label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        views: 0,
+        uniqueVisitors: 0,
+        ctas: 0,
+        calls: 0,
+        whatsapps: 0,
+        directions: 0,
+        websites: 0,
+        enquiries: 0,
+      });
+    }
+
+    return {
+      periodDays: days,
+      totals: {
+        views: 0,
+        uniqueVisitors: 0,
+        ctas: 0,
+        calls: 0,
+        whatsapps: 0,
+        directions: 0,
+        websites: 0,
+        enquiries: 0,
+        shares: 0,
+        conversionRate: 0,
+      },
+      deltas: {
+        viewsPct: 0,
+        uniqueVisitorsPct: 0,
+        ctasPct: 0,
+        conversionRatePct: 0,
       },
       timeSeries,
-    };
-  }
-
-  /**
-   * Merchant Portfolio Overview across all business listings owned by a merchant
-   */
-  static async getMerchantOverviewAnalytics(ownerId: string, days = 30): Promise<MerchantOverviewResult> {
-    const listings = await db.listing.findMany({
-      where: { ownerId },
-      select: { id: true, title: true, slug: true },
-    });
-
-    if (listings.length === 0) {
-      return {
-        totalListings: 0,
-        totalPageViews: 0,
-        totalUniqueVisitors: 0,
-        totalActions: 0,
-        conversionRate: 0,
-        topListings: [],
-        timeSeries: [],
-      };
-    }
-
-    const listingIds = listings.map((l) => l.id);
-    const now = new Date();
-    const currentEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-    const currentStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - days + 1));
-
-    const summaries = await db.analyticsDailySummary.findMany({
-      where: {
-        listingId: { in: listingIds },
-        date: { gte: currentStart, lt: currentEnd },
-      },
-      orderBy: { date: "asc" },
-    });
-
-    // Date bucketed map
-    const dateMap = new Map<string, AnalyticsSummaryPoint>();
-    for (let i = 0; i < days; i++) {
-      const d = new Date(currentStart);
-      d.setUTCDate(d.getUTCDate() + i);
-      const key = d.toISOString().slice(0, 10);
-      dateMap.set(key, {
-        date: key,
-        pageViews: 0,
-        uniqueVisitors: 0,
-        actions: 0,
-        calls: 0,
-        whatsapp: 0,
-        directions: 0,
-        website: 0,
-        enquiries: 0,
-        shares: 0,
-      });
-    }
-
-    // Per-listing totals
-    const perListingMap = new Map<string, { pageViews: number; actions: number }>();
-    for (const l of listings) {
-      perListingMap.set(l.id, { pageViews: 0, actions: 0 });
-    }
-
-    let totalPageViews = 0;
-    let totalUniqueVisitors = 0;
-    let totalActions = 0;
-
-    for (const s of summaries) {
-      const key = s.date.toISOString().slice(0, 10);
-      const dayItem = dateMap.get(key);
-      const actions = s.callClicks + s.whatsappClicks + s.directionsClicks + s.websiteClicks + s.enquiries;
-
-      if (dayItem) {
-        dayItem.pageViews += s.pageViews;
-        dayItem.uniqueVisitors += s.uniqueVisitors;
-        dayItem.actions += actions;
-        dayItem.calls += s.callClicks;
-        dayItem.whatsapp += s.whatsappClicks;
-        dayItem.directions += s.directionsClicks;
-        dayItem.website += s.websiteClicks;
-        dayItem.enquiries += s.enquiries;
-        dayItem.shares += s.shares;
-      }
-
-      totalPageViews += s.pageViews;
-      totalUniqueVisitors += s.uniqueVisitors;
-      totalActions += actions;
-
-      const listingStat = perListingMap.get(s.listingId);
-      if (listingStat) {
-        listingStat.pageViews += s.pageViews;
-        listingStat.actions += actions;
-      }
-    }
-
-    const conversionRate = totalUniqueVisitors > 0 ? Number(((totalActions / totalUniqueVisitors) * 100).toFixed(1)) : 0;
-
-    const topListings = listings
-      .map((l) => {
-        const stat = perListingMap.get(l.id) || { pageViews: 0, actions: 0 };
-        return {
-          id: l.id,
-          title: l.title,
-          slug: l.slug,
-          pageViews: stat.pageViews,
-          actions: stat.actions,
-          conversionRate: stat.pageViews > 0 ? Number(((stat.actions / stat.pageViews) * 100).toFixed(1)) : 0,
-        };
-      })
-      .sort((a, b) => b.actions - a.actions || b.pageViews - a.pageViews);
-
-    return {
-      totalListings: listings.length,
-      totalPageViews,
-      totalUniqueVisitors,
-      totalActions,
-      conversionRate,
-      topListings,
-      timeSeries: Array.from(dateMap.values()),
-    };
-  }
-
-  /**
-   * Directory-Wide Analytics Portal for Administrator Console
-   */
-  static async getDirectoryGlobalAnalytics(days = 30): Promise<DirectoryGlobalAnalyticsResult> {
-    const now = new Date();
-    const currentEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-    const currentStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - days + 1));
-
-    const summaries = await db.analyticsDailySummary.findMany({
-      where: {
-        date: { gte: currentStart, lt: currentEnd },
-      },
-      include: {
-        listing: {
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            owner: { select: { name: true } },
-          },
-        },
-      },
-      orderBy: { date: "asc" },
-    });
-
-    const dateMap = new Map<string, AnalyticsSummaryPoint>();
-    for (let i = 0; i < days; i++) {
-      const d = new Date(currentStart);
-      d.setUTCDate(d.getUTCDate() + i);
-      const key = d.toISOString().slice(0, 10);
-      dateMap.set(key, {
-        date: key,
-        pageViews: 0,
-        uniqueVisitors: 0,
-        actions: 0,
-        calls: 0,
-        whatsapp: 0,
-        directions: 0,
-        website: 0,
-        enquiries: 0,
-        shares: 0,
-      });
-    }
-
-    const listingMap = new Map<
-      string,
-      {
-        id: string;
-        title: string;
-        slug: string;
-        ownerName: string | null;
-        pageViews: number;
-        actions: number;
-      }
-    >();
-
-    let totalPageViews = 0;
-    let totalUniqueVisitors = 0;
-    let totalCalls = 0;
-    let totalWhatsApp = 0;
-    let totalDirections = 0;
-    let totalWebsite = 0;
-    let totalEnquiries = 0;
-    let totalShares = 0;
-
-    for (const s of summaries) {
-      const key = s.date.toISOString().slice(0, 10);
-      const dayItem = dateMap.get(key);
-      const actions = s.callClicks + s.whatsappClicks + s.directionsClicks + s.websiteClicks + s.enquiries;
-
-      if (dayItem) {
-        dayItem.pageViews += s.pageViews;
-        dayItem.uniqueVisitors += s.uniqueVisitors;
-        dayItem.actions += actions;
-        dayItem.calls += s.callClicks;
-        dayItem.whatsapp += s.whatsappClicks;
-        dayItem.directions += s.directionsClicks;
-        dayItem.website += s.websiteClicks;
-        dayItem.enquiries += s.enquiries;
-        dayItem.shares += s.shares;
-      }
-
-      totalPageViews += s.pageViews;
-      totalUniqueVisitors += s.uniqueVisitors;
-      totalCalls += s.callClicks;
-      totalWhatsApp += s.whatsappClicks;
-      totalDirections += s.directionsClicks;
-      totalWebsite += s.websiteClicks;
-      totalEnquiries += s.enquiries;
-      totalShares += s.shares;
-
-      if (s.listing) {
-        let entry = listingMap.get(s.listing.id);
-        if (!entry) {
-          entry = {
-            id: s.listing.id,
-            title: s.listing.title,
-            slug: s.listing.slug,
-            ownerName: s.listing.owner?.name || null,
-            pageViews: 0,
-            actions: 0,
-          };
-          listingMap.set(s.listing.id, entry);
-        }
-        entry.pageViews += s.pageViews;
-        entry.actions += actions;
-      }
-    }
-
-    const totalActions = totalCalls + totalWhatsApp + totalDirections + totalWebsite + totalEnquiries;
-    const conversionRate = totalUniqueVisitors > 0 ? Number(((totalActions / totalUniqueVisitors) * 100).toFixed(1)) : 0;
-
-    const topPerformers = Array.from(listingMap.values())
-      .map((item) => ({
-        ...item,
-        conversionRate: item.pageViews > 0 ? Number(((item.actions / item.pageViews) * 100).toFixed(1)) : 0,
-      }))
-      .sort((a, b) => b.actions - a.actions || b.pageViews - a.pageViews)
-      .slice(0, 10);
-
-    return {
-      totalTrackedListings: listingMap.size,
-      totalPageViews,
-      totalUniqueVisitors,
-      totalActions,
-      conversionRate,
-      topPerformers,
-      actionBreakdown: {
-        calls: totalCalls,
-        whatsapp: totalWhatsApp,
-        directions: totalDirections,
-        website: totalWebsite,
-        enquiries: totalEnquiries,
-        shares: totalShares,
-      },
-      timeSeries: Array.from(dateMap.values()),
     };
   }
 }
