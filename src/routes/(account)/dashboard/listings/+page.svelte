@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from "./$types";
-  import { Store, ExternalLink, Calendar, Plus } from "lucide-svelte";
+  import { Store, ExternalLink, Calendar, Plus, BarChart3 } from "lucide-svelte";
 
   let { data }: { data: PageData } = $props();
 </script>
@@ -86,14 +86,23 @@
                 </td>
                 <td class="p-4 font-medium text-foreground">{Number(l.viewCount)}</td>
                 <td class="p-4 text-right">
-                  <a
-                    href="/listing/{l.slug}"
-                    target="_blank"
-                    class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                  >
-                    <span>View Live</span>
-                    <ExternalLink class="h-3 w-3" />
-                  </a>
+                  <div class="inline-flex items-center gap-3">
+                    <a
+                      href="/dashboard/listings/{l.id}/analytics"
+                      class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
+                    >
+                      <BarChart3 class="h-3 w-3" />
+                      <span>Analytics</span>
+                    </a>
+                    <a
+                      href="/listing/{l.slug}"
+                      target="_blank"
+                      class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                    >
+                      <span>View Live</span>
+                      <ExternalLink class="h-3 w-3" />
+                    </a>
+                  </div>
                 </td>
               </tr>
             {/each}

@@ -16,6 +16,7 @@
     PanelLeft,
     Building2,
     Shield,
+    BarChart3,
   } from "lucide-svelte";
   import UserProfileDropdown from "$lib/components/ui/UserProfileDropdown.svelte";
 
@@ -43,6 +44,7 @@
   const navItems = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { label: "My Listings", href: "/dashboard/listings", icon: Store },
+    { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
     { label: "Media Manager", href: "/dashboard/media", icon: ImageIcon },
     { label: "Leads & Enquiries", href: "/dashboard/enquiries", icon: Inbox },
     { label: "Customer Reviews", href: "/dashboard/reviews", icon: Star },
