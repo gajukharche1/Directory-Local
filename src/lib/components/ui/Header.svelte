@@ -3,6 +3,7 @@
   import UserProfileDropdown from "$lib/components/ui/UserProfileDropdown.svelte";
   import type { AuthenticatedUser } from "$lib/auth/session";
   import type { SiteSettingsData } from "$lib/services/settings.service";
+  import { page } from "$app/state";
 
   let {
     user,
@@ -12,17 +13,19 @@
     siteSettings?: Partial<SiteSettingsData> | null;
   } = $props();
 
-  const brandName = $derived(siteSettings?.siteName || "Local Business");
-  const brandTagline = $derived(siteSettings?.siteTagline || "Local Directory");
+  const effectiveSettings = $derived(siteSettings || page.data.siteSettings);
+  const brandName = $derived(effectiveSettings?.siteName || "Local Business");
+  const brandTagline = $derived(effectiveSettings?.siteTagline || "Local Directory");
+  const logoUrl = $derived(effectiveSettings?.logoUrl || null);
 </script>
 
 <header class="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
     <!-- Brand Logo -->
     <a href="/" class="flex items-center gap-3">
-      {#if siteSettings?.logoUrl}
+      {#if logoUrl}
         <img
-          src={siteSettings.logoUrl}
+          src={logoUrl}
           alt={brandName}
           class="h-9 w-auto max-w-[140px] object-contain rounded-xl"
         />

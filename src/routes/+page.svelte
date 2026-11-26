@@ -8,7 +8,7 @@
   let { data }: PageProps = $props();
 </script>
 
-<Header user={data.user} />
+<Header user={data.user} siteSettings={data.siteSettings} />
 
 <!-- Hero Search Section -->
 <section class="relative overflow-hidden bg-gradient-to-b from-indigo-50/60 via-slate-50 to-white py-16 sm:py-24 border-b border-slate-200">

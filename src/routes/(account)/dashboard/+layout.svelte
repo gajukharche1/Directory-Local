@@ -63,13 +63,23 @@
       <!-- Top Brand & Collapse Toggle -->
       <div class="p-4 border-b border-slate-100 flex items-center {isCollapsed ? 'justify-center' : 'justify-between'}">
         <a href="/" class="flex items-center gap-2.5">
-          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white font-black text-sm shadow-sm shrink-0">
-            <Building2 class="h-4 w-4" />
-          </div>
+          {#if page.data.siteSettings?.logoUrl}
+            <div class="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-slate-200 p-0.5 shrink-0 overflow-hidden shadow-xs">
+              <img
+                src={page.data.siteSettings.logoUrl}
+                alt={page.data.siteSettings.siteName || "Brand Logo"}
+                class="max-h-full max-w-full object-contain"
+              />
+            </div>
+          {:else}
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white font-black text-sm shadow-sm shrink-0">
+              <Building2 class="h-4 w-4" />
+            </div>
+          {/if}
           {#if !isCollapsed}
             <div class="min-w-0">
               <span class="font-extrabold tracking-tight text-sm text-slate-900 block leading-none truncate">
-                Local Business
+                {page.data.siteSettings?.siteName || "Local Business"}
               </span>
               <span class="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">
                 Owner Dashboard

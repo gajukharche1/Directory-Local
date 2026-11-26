@@ -122,15 +122,25 @@
       <!-- App Brand Header & Toggle Button -->
       <div class="flex items-center {isCollapsed ? 'justify-center' : 'justify-between'} gap-2">
         <a href="/admin" class="flex items-center gap-3 group min-w-0" title="LocalDirectory Admin">
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white font-black text-base shadow-sm group-hover:scale-105 transition-transform shrink-0"
-          >
-            <Building2 class="h-5 w-5" />
-          </div>
+          {#if page.data.siteSettings?.logoUrl}
+            <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-white border border-slate-200/80 p-1 shrink-0 overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
+              <img
+                src={page.data.siteSettings.logoUrl}
+                alt={page.data.siteSettings.siteName || "Brand Logo"}
+                class="max-h-full max-w-full object-contain"
+              />
+            </div>
+          {:else}
+            <div
+              class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white font-black text-base shadow-sm group-hover:scale-105 transition-transform shrink-0"
+            >
+              <Building2 class="h-5 w-5" />
+            </div>
+          {/if}
           {#if !isCollapsed}
             <div class="min-w-0 animate-in fade-in duration-200">
               <span class="font-extrabold tracking-tight text-sm text-slate-900 block leading-tight truncate">
-                LocalDirectory
+                {page.data.siteSettings?.siteName || "LocalDirectory"}
               </span>
               <span class="text-[10px] text-slate-400 font-semibold tracking-wider uppercase flex items-center gap-1.5 mt-0.5">
                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Admin Console
