@@ -23,6 +23,7 @@
   import ListingStickyLeadCard from "$lib/components/listing/ListingStickyLeadCard.svelte";
   import ReviewDistribution from "$lib/components/reviews/ReviewDistribution.svelte";
   import OpeningHoursCard from "$lib/components/listing/OpeningHoursCard.svelte";
+  import ListingAnalyticsTracker from "$lib/components/analytics/ListingAnalyticsTracker.svelte";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -78,6 +79,7 @@
 <Header user={data.user} />
 
 {#if listing}
+  <ListingAnalyticsTracker listingId={listing.id} />
   <div class="min-h-screen bg-slate-50/60 pb-24 md:pb-16 text-foreground">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       <!-- 1. Bento 5-Tile Photo Hero Mosaic with Fullscreen Lightbox -->
@@ -106,6 +108,7 @@
 
       <!-- 3. Desktop High-Conversion Action Dock (and mobile trigger) -->
       <ListingActionDock
+        listingId={listing.id}
         phone={listing.phone}
         whatsapp={listing.whatsapp}
         email={listing.email}

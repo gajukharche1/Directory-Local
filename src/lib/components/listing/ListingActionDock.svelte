@@ -8,8 +8,10 @@
     Check,
     Send,
   } from "lucide-svelte";
+  import { trackEvent } from "$lib/components/analytics/track-event";
 
   interface Props {
+    listingId?: string;
     phone?: string | null;
     whatsapp?: string | null;
     email?: string | null;
@@ -19,6 +21,7 @@
   }
 
   let {
+    listingId,
     phone = null,
     whatsapp = null,
     email = null,
@@ -43,6 +46,9 @@
   );
 
   async function shareListing() {
+    if (listingId) {
+      trackEvent(listingId, "SHARE");
+    }
     if (navigator.share) {
       try {
         await navigator.share({
@@ -65,6 +71,9 @@
   {#if cleanPhone}
     <a
       href={`tel:${cleanPhone}`}
+      onclick={() => {
+        if (listingId) trackEvent(listingId, "CALL");
+      }}
       class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition-all shadow-xs cursor-pointer flex-1"
     >
       <Phone class="h-4 w-4" />
@@ -77,6 +86,9 @@
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
+      onclick={() => {
+        if (listingId) trackEvent(listingId, "WHATSAPP");
+      }}
       class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex-1"
     >
       <MessageCircle class="h-4 w-4" />
@@ -88,6 +100,9 @@
     href={mapsUrl}
     target="_blank"
     rel="noopener noreferrer"
+    onclick={() => {
+      if (listingId) trackEvent(listingId, "DIRECTIONS");
+    }}
     class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border bg-card hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
   >
     <Navigation class="h-4 w-4 text-primary" />
@@ -97,7 +112,10 @@
   <button
     type="button"
     class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs font-bold transition-colors cursor-pointer"
-    onclick={onenquire}
+    onclick={() => {
+      if (listingId) trackEvent(listingId, "ENQUIRY");
+      onenquire();
+    }}
   >
     <Send class="h-4 w-4" />
     <span>Send Enquiry</span>
@@ -122,6 +140,9 @@
   {#if cleanPhone}
     <a
       href={`tel:${cleanPhone}`}
+      onclick={() => {
+        if (listingId) trackEvent(listingId, "CALL");
+      }}
       class="flex-1 inline-flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-primary text-primary-foreground text-[11px] font-bold min-h-[48px] active:scale-95 transition-transform"
       aria-label="Call business"
     >
@@ -135,6 +156,9 @@
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
+      onclick={() => {
+        if (listingId) trackEvent(listingId, "WHATSAPP");
+      }}
       class="flex-1 inline-flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-emerald-600 text-white text-[11px] font-bold min-h-[48px] active:scale-95 transition-transform"
       aria-label="Chat on WhatsApp"
     >
@@ -147,6 +171,9 @@
     href={mapsUrl}
     target="_blank"
     rel="noopener noreferrer"
+    onclick={() => {
+      if (listingId) trackEvent(listingId, "DIRECTIONS");
+    }}
     class="flex-1 inline-flex flex-col items-center justify-center py-2 px-1 rounded-xl border border-border bg-muted/60 text-foreground text-[11px] font-medium min-h-[48px] active:scale-95 transition-transform"
     aria-label="Get Directions"
   >
@@ -157,7 +184,10 @@
   <button
     type="button"
     class="flex-1 inline-flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-secondary text-secondary-foreground text-[11px] font-bold min-h-[48px] active:scale-95 transition-transform cursor-pointer"
-    onclick={onenquire}
+    onclick={() => {
+      if (listingId) trackEvent(listingId, "ENQUIRY");
+      onenquire();
+    }}
     aria-label="Send Enquiry"
   >
     <Send class="h-4 w-4 mb-0.5" />
