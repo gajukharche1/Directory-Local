@@ -7,6 +7,11 @@
 
   let role = $state<"visitor" | "owner">("visitor");
   let isPending = $state(false);
+  let fieldErrors = $derived(
+    form && typeof form === "object" && "fieldErrors" in form
+      ? (form.fieldErrors as Record<string, string[] | undefined>)
+      : undefined
+  );
 </script>
 
 <svelte:head>
@@ -78,8 +83,8 @@
           class="w-full rounded-lg border bg-background py-2 pl-9 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary"
         />
       </div>
-      {#if form?.fieldErrors?.name}
-        <p class="mt-1 text-xs text-destructive">{form.fieldErrors.name[0]}</p>
+      {#if fieldErrors?.name}
+        <p class="mt-1 text-xs text-destructive">{fieldErrors.name[0]}</p>
       {/if}
     </div>
 
@@ -96,8 +101,8 @@
           class="w-full rounded-lg border bg-background py-2 pl-9 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary"
         />
       </div>
-      {#if form?.fieldErrors?.email}
-        <p class="mt-1 text-xs text-destructive">{form.fieldErrors.email[0]}</p>
+      {#if fieldErrors?.email}
+        <p class="mt-1 text-xs text-destructive">{fieldErrors.email[0]}</p>
       {/if}
     </div>
 
@@ -116,8 +121,8 @@
           class="w-full rounded-lg border bg-background py-2 pl-9 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary"
         />
       </div>
-      {#if form?.fieldErrors?.phone}
-        <p class="mt-1 text-xs text-destructive">{form.fieldErrors.phone[0]}</p>
+      {#if fieldErrors?.phone}
+        <p class="mt-1 text-xs text-destructive">{fieldErrors.phone[0]}</p>
       {/if}
     </div>
 
@@ -134,8 +139,8 @@
           class="w-full rounded-lg border bg-background py-2 pl-9 pr-3 text-sm outline-none ring-offset-background placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary"
         />
       </div>
-      {#if form?.fieldErrors?.password}
-        <p class="mt-1 text-xs text-destructive">{form.fieldErrors.password[0]}</p>
+      {#if fieldErrors?.password}
+        <p class="mt-1 text-xs text-destructive">{fieldErrors.password[0]}</p>
       {/if}
     </div>
 

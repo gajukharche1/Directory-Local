@@ -5,23 +5,29 @@ import { ListingStatus, ClaimStatus, Prisma } from "@prisma/client";
 export interface CreateListingInput {
   title: string;
   description: string;
-  phone?: string;
-  whatsapp?: string;
-  email?: string;
-  website?: string;
+  tagline?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  seoKeywords?: string | null;
+  ogImage?: string | null;
+  customSections?: Prisma.InputJsonValue;
+  phone?: string | null;
+  whatsapp?: string | null;
+  email?: string | null;
+  website?: string | null;
   address: string;
   locality: string;
-  landmark?: string;
-  latitude?: number;
-  longitude?: number;
-  yearEstablished?: number;
-  priceRange?: number;
+  landmark?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  yearEstablished?: number | null;
+  priceRange?: number | null;
   openingHours?: Prisma.InputJsonValue;
   amenities?: string[];
   socialLinks?: Prisma.InputJsonValue;
   categoryIds: string[];
   locationIds: string[];
-  planId?: string;
+  planId?: string | null;
 }
 
 export class ListingService {
@@ -133,8 +139,8 @@ export class ListingService {
         address: stripHtml(input.address),
         locality: stripHtml(input.locality),
         landmark: input.landmark ? stripHtml(input.landmark) : null,
-        latitude: input.latitude !== undefined ? new Prisma.Decimal(input.latitude) : null,
-        longitude: input.longitude !== undefined ? new Prisma.Decimal(input.longitude) : null,
+        latitude: input.latitude !== undefined && input.latitude !== null ? new Prisma.Decimal(input.latitude) : null,
+        longitude: input.longitude !== undefined && input.longitude !== null ? new Prisma.Decimal(input.longitude) : null,
         yearEstablished: input.yearEstablished ?? null,
         priceRange: input.priceRange ?? 1,
         openingHours: input.openingHours ?? Prisma.DbNull,
@@ -260,7 +266,7 @@ export class ListingService {
         ...(input.latitude !== undefined && { latitude: input.latitude !== null ? new Prisma.Decimal(input.latitude) : null }),
         ...(input.longitude !== undefined && { longitude: input.longitude !== null ? new Prisma.Decimal(input.longitude) : null }),
         ...(input.yearEstablished !== undefined && { yearEstablished: input.yearEstablished }),
-        ...(input.priceRange !== undefined && { priceRange: input.priceRange }),
+        ...(input.priceRange !== undefined && input.priceRange !== null && { priceRange: input.priceRange }),
         ...(input.openingHours !== undefined && { openingHours: input.openingHours ?? Prisma.DbNull }),
         ...(input.amenities !== undefined && { amenities: input.amenities }),
         ...(input.socialLinks !== undefined && { socialLinks: input.socialLinks ?? Prisma.DbNull }),

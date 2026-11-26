@@ -8,8 +8,12 @@
     confirmLabel = "Confirm",
     confirmVariant = "destructive",
     isProcessing = false,
+    selectedCount,
+    entityType,
+    isDangerous,
     onconfirm,
     oncancel,
+    onclose,
   }: {
     isOpen: boolean;
     title?: string;
@@ -17,19 +21,28 @@
     confirmLabel?: string;
     confirmVariant?: "destructive" | "primary";
     isProcessing?: boolean;
+    selectedCount?: number;
+    entityType?: string;
+    isDangerous?: boolean;
     onconfirm: () => void;
-    oncancel: () => void;
+    oncancel?: () => void;
+    onclose?: () => void;
   } = $props();
+
+  function handleCancel() {
+    if (oncancel) oncancel();
+    else if (onclose) onclose();
+  }
 </script>
 
 {#if isOpen}
   <div
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/25 backdrop-blur-[2px] transition-all"
     onclick={(e) => {
-      if (e.target === e.currentTarget && !isProcessing) oncancel();
+      if (e.target === e.currentTarget && !isProcessing) handleCancel();
     }}
     onkeydown={(e) => {
-      if (e.key === "Escape" && !isProcessing) oncancel();
+      if (e.key === "Escape" && !isProcessing) handleCancel();
     }}
     role="dialog"
     aria-modal="true"
@@ -53,7 +66,7 @@
         <button
           type="button"
           class="h-7 w-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
-          onclick={oncancel}
+          onclick={handleCancel}
           disabled={isProcessing}
         >
           <X class="h-3.5 w-3.5" />
@@ -64,7 +77,7 @@
         <button
           type="button"
           class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50"
-          onclick={oncancel}
+          onclick={handleCancel}
           disabled={isProcessing}
         >
           Cancel

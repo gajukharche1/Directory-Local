@@ -2,7 +2,7 @@
   import type { Snippet } from "svelte";
   import type { LayoutData } from "./$types";
   import { page, navigating } from "$app/state";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import {
     Sliders,
     ShieldAlert,
@@ -100,12 +100,12 @@
   }
 
   function isNavigatingTo(href: string) {
-    return navigating.current?.to?.url.pathname === href;
+    return navigating.to?.url.pathname === href;
   }
 </script>
 
 <!-- Top Indeterminate Progress Rail -->
-{#if navigating.current}
+{#if navigating.to}
   <div class="fixed top-0 left-0 right-0 h-1 z-50 overflow-hidden bg-blue-100 shadow-xs">
     <div class="h-full bg-blue-600 animate-[shimmer-wave_1.2s_infinite_ease-in-out] w-full"></div>
   </div>

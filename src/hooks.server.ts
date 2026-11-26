@@ -1,5 +1,5 @@
-import type { Handle, HandleServerError } from "@sveltejs/kit";
-import { building } from "$app/environment";
+import type { Handle, HandleServerError } from "@sveltejs/kit/hooks";
+import { building } from "$app/env";
 import { SESSION_COOKIE_NAME, validateSessionToken } from "$lib/auth/session";
 import { getSettings } from "$lib/services/settings.service";
 
@@ -79,7 +79,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   return response;
 };
 
-export const handleError: HandleServerError = ({ error, event, status, message }) => {
+export const handleError: HandleServerError = ({ error, event }) => {
   const errMessage = error instanceof Error ? error.message : String(error);
   console.error(`[Server Error ${status}] at ${event.url.pathname}:`, error);
 

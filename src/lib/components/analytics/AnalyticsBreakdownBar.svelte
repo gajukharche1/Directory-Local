@@ -82,7 +82,7 @@
       textColor: "text-amber-700",
       bgLight: "bg-amber-50",
       icon: Share2,
-      pct: grandTotal > 0 ? Number(((totals.shares / grandTotal) * 100).toFixed(1)) : 0,
+      pct: grandTotal > 0 ? Number((((totals.shares || 0) / grandTotal) * 100).toFixed(1)) : 0,
     },
   ]);
 </script>

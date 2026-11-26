@@ -47,7 +47,7 @@
   let activeAction = $state<string | null>(null);
   let feedbackMessage = $state("");
 
-  let isNavigating = $derived(Boolean(navigating.current));
+  let isNavigating = $derived(Boolean(navigating.to));
 
   let statusTabs = $derived([
     { label: "All", value: "", count: data.totalCount },

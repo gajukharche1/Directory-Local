@@ -8,6 +8,10 @@
     lineColor?: string;
     fillColor?: string;
     height?: number;
+    primaryKey?: string;
+    secondaryKey?: string;
+    primaryLabel?: string;
+    secondaryLabel?: string;
   }
 
   let {

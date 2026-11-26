@@ -57,16 +57,15 @@
 
   function switchTab(tab: "general" | "users") {
     activeTab = tab;
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     if (tab === "users") {
       url.searchParams.set("tab", "users");
     } else {
       url.searchParams.delete("tab");
     }
     goto(url.toString(), {
-      replaceState: true,
-      noScroll: true,
-      keepFocus: true,
+      replace: true,
+      reset: false,
     });
   }
 

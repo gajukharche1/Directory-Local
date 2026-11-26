@@ -73,8 +73,8 @@
 
     try {
       const media = await uploadMediaFile(current.file, {
-        listingId,
-        folderId,
+        listingId: listingId || undefined,
+        folderId: folderId || undefined,
         onProgress: (p: UploadProgressEvent) => {
           current.progress = p.percentage;
         },

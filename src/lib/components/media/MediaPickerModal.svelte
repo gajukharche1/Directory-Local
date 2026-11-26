@@ -8,6 +8,7 @@
     listingId?: string;
     folderId?: string;
     maxSelect?: number;
+    multiSelect?: boolean;
     title?: string;
     onselect: (selected: any[]) => void;
     onclose: () => void;
@@ -18,6 +19,7 @@
     listingId,
     folderId,
     maxSelect = 1,
+    multiSelect = false,
     title = "Select Media Assets",
     onselect,
     onclose,

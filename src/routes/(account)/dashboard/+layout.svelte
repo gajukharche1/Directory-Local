@@ -2,7 +2,7 @@
   import type { Snippet } from "svelte";
   import type { LayoutData } from "./$types";
   import { page } from "$app/state";
-  import { browser } from "$app/environment";
+  import { browser } from "$app/env";
   import {
     LayoutDashboard,
     Store,

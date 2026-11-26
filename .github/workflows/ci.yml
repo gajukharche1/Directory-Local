@@ -39,11 +39,11 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: TypeScript Static Typecheck
+      - name: Static Typecheck
         run: npm run typecheck
 
       - name: Execute Vitest Unit Test Suite
         run: npm run test
 
-      - name: Build Standalone Production Next.js Bundle
+      - name: Build Application Bundle
         run: npm run build

@@ -53,7 +53,7 @@ export const GET: RequestHandler = async ({ params }) => {
     });
 
     if (media && media.fileData) {
-      return new Response(media.fileData, {
+      return new Response(Buffer.from(media.fileData), {
         headers: {
           "Content-Type": media.mimeType || "image/jpeg",
           "Cache-Control": "public, max-age=31536000, immutable",
@@ -68,7 +68,7 @@ export const GET: RequestHandler = async ({ params }) => {
     });
 
     if (buffered && buffered.data) {
-      return new Response(buffered.data, {
+      return new Response(Buffer.from(buffered.data), {
         headers: {
           "Content-Type": buffered.mimeType || "image/jpeg",
           "Cache-Control": "public, max-age=3600",

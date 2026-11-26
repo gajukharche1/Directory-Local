@@ -155,7 +155,7 @@
   }
 
   // Custom Sections / Modular Data
-  let rawSections = data.listing.customSections || {};
+  let rawSections: any = (data.listing.customSections && typeof data.listing.customSections === "object") ? data.listing.customSections : {};
   let highlights = $state<Array<{ title: string; desc: string }>>(
     rawSections.highlights || [
       { title: "Certified Specialist Staff", desc: "Professionally trained and accredited specialists on premise." },

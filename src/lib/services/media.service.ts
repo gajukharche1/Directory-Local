@@ -123,7 +123,7 @@ export class MediaService {
     const posixKey = input.key.replace(/\\/g, "/");
 
     // Look for serverless upload buffer if local disk was not writable
-    let fileData: Buffer | null = null;
+    let fileData: Uint8Array | null = null;
     try {
       const buffered = await db.mediaUploadBuffer.findUnique({
         where: { key: posixKey },
