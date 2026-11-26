@@ -427,6 +427,7 @@ model Media {
   tags           Json?
   isQuarantined  Boolean         @default(false)
   scanStatus     MediaScanStatus @default(pending)
+  fileData       Bytes?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @default(now()) @updatedAt
   deletedAt      DateTime?
@@ -440,6 +441,15 @@ model Media {
   @@index([folderId])
   @@index([isQuarantined])
   @@map("media")
+}
+
+model MediaUploadBuffer {
+  key        String   @id
+  data       Bytes
+  mimeType   String
+  createdAt  DateTime @default(now())
+
+  @@map("media_upload_buffers")
 }
 
 model MediaFolder {

@@ -13,12 +13,13 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
   }
 
   const key = decodeURIComponent(rawKey);
+  const mimeType = request.headers.get("content-type") || "image/jpeg";
 
   try {
     const arrayBuffer = await request.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const publicUrl = await StorageService.saveLocalFile(key, buffer);
+    const publicUrl = await StorageService.saveLocalFile(key, buffer, mimeType);
     return json({ success: true, url: publicUrl, key });
   } catch (err: any) {
     return json({ error: err.message || "Direct storage write failed." }, { status: 500 });

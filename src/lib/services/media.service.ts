@@ -120,12 +120,28 @@ export class MediaService {
       throw new Error("Invalid MIME type.");
     }
 
+    const posixKey = input.key.replace(/\\/g, "/");
+
+    // Look for serverless upload buffer if local disk was not writable
+    let fileData: Buffer | null = null;
+    try {
+      const buffered = await db.mediaUploadBuffer.findUnique({
+        where: { key: posixKey },
+      });
+      if (buffered) {
+        fileData = buffered.data;
+        await db.mediaUploadBuffer.delete({ where: { key: posixKey } }).catch(() => {});
+      }
+    } catch {
+      // Non-fatal if buffer table check is skipped
+    }
+
     const media = await db.media.create({
       data: {
         ownerId,
         listingId: input.listingId || null,
         folderId: input.folderId || null,
-        key: input.key,
+        key: posixKey,
         url: input.url,
         mimeType: input.mimeType,
         bytes: input.bytes,
@@ -133,6 +149,7 @@ export class MediaService {
         height: input.height || null,
         altText: input.altText || input.fileName || "Uploaded business media",
         scanStatus: "clean",
+        fileData: fileData || undefined,
       },
     });
 

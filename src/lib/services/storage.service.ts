@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
+import db from "$lib/db/client";
 
 export interface StorageTicket {
   key: string;
@@ -17,8 +18,6 @@ export class StorageService {
   /**
    * Generates a ticket for file upload.
    * Organizes storage keys using WordPress date-based structure: YYYY/MM/filename-suffix.ext
-   * If S3/R2 credentials are set, generates a presigned PUT URL.
-   * Otherwise, provides a direct local upload URL fallback.
    */
   static async createUploadTicket(
     fileName: string,
@@ -54,15 +53,22 @@ export class StorageService {
     const sanitizedPrefix = datePrefix.replace(/[^a-zA-Z0-9_\-\/]/g, "").replace(/^\/+|\/+$/g, "");
     const objectKey = `${sanitizedPrefix}/${sanitizedBase}-${uniqueSuffix}.${cleanExt}`;
 
-    const r2Bucket = process.env.STORAGE_BUCKET;
-    const r2Endpoint = process.env.STORAGE_ENDPOINT;
-    const r2AccessKey = process.env.STORAGE_ACCESS_KEY_ID;
-    const r2SecretKey = process.env.STORAGE_SECRET_ACCESS_KEY;
-    const publicBaseUrl = process.env.STORAGE_PUBLIC_URL || process.env.NEXT_PUBLIC_STORAGE_PUBLIC_URL;
+    const r2Bucket = process.env.STORAGE_BUCKET || process.env.R2_BUCKET_NAME;
+    const r2Endpoint =
+      process.env.STORAGE_ENDPOINT ||
+      (process.env.R2_ACCOUNT_ID
+        ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
+        : undefined);
+    const r2AccessKey = process.env.STORAGE_ACCESS_KEY_ID || process.env.R2_ACCESS_KEY_ID;
+    const r2SecretKey = process.env.STORAGE_SECRET_ACCESS_KEY || process.env.R2_SECRET_ACCESS_KEY;
+    const publicBaseUrl =
+      process.env.STORAGE_PUBLIC_URL ||
+      process.env.NEXT_PUBLIC_R2_PUBLIC_URL ||
+      process.env.NEXT_PUBLIC_STORAGE_PUBLIC_URL;
 
     // Cloud S3 / Cloudflare R2 Presigned Upload
     if (r2Bucket && r2Endpoint && r2AccessKey && r2SecretKey) {
-      const publicUrl = publicBaseUrl 
+      const publicUrl = publicBaseUrl
         ? `${publicBaseUrl.replace(/\/+$/, "")}/${objectKey}`
         : `${r2Endpoint.replace(/\/+$/, "")}/${r2Bucket}/${objectKey}`;
 
@@ -70,7 +76,7 @@ export class StorageService {
         key: objectKey,
         uploadUrl: `/api/media/upload-direct?key=${encodeURIComponent(objectKey)}`,
         publicUrl,
-        method: "PUT",
+        method: "POST",
         headers: {
           "Content-Type": mimeType,
         },
@@ -78,7 +84,7 @@ export class StorageService {
       };
     }
 
-    // Local Disk Fallback (WordPress YYYY/MM structure under /uploads/)
+    // Default: WordPress YYYY/MM structure under /uploads/
     const publicUrl = `/uploads/${objectKey}`;
 
     return {
@@ -91,28 +97,64 @@ export class StorageService {
   }
 
   /**
-   * Saves a buffer directly to local storage (for fallback / local dev)
-   * Ensures parent directories (e.g. static/uploads/YYYY/MM/) are created recursively.
+   * Saves a buffer to storage.
+   * Attempts local filesystem write (for dev or persistent servers).
+   * If local disk write fails (e.g. read-only filesystem on Vercel Serverless),
+   * transparently persists buffer to database storage so upload never fails.
    */
-  static async saveLocalFile(key: string, buffer: Buffer): Promise<string> {
+  static async saveLocalFile(
+    key: string,
+    buffer: Buffer,
+    mimeType: string = "image/jpeg"
+  ): Promise<string> {
+    const posixKey = key.replace(/\\/g, "/");
+
+    // Path traversal security check (must always throw on malicious input)
     const normalizedDir = path.normalize(this.uploadDir);
     const targetPath = path.normalize(path.resolve(this.uploadDir, key));
     if (!targetPath.startsWith(normalizedDir)) {
       throw new Error("Invalid path traversal attempted.");
     }
 
-    const parentDir = path.dirname(targetPath);
-    await fs.mkdir(parentDir, { recursive: true });
-    await fs.writeFile(targetPath, buffer);
+    try {
+      const parentDir = path.dirname(targetPath);
+      await fs.mkdir(parentDir, { recursive: true });
+      await fs.writeFile(targetPath, buffer);
+      return `/uploads/${posixKey}`;
+    } catch (diskErr: any) {
+      // Vercel Serverless / Read-Only Filesystem Fallback
+      console.warn(
+        `Local disk write unavailable (${diskErr.message}), persisting to database buffer for ${posixKey}`
+      );
 
-    const posixKey = key.replace(/\\/g, "/");
-    return `/uploads/${posixKey}`;
+      await db.mediaUploadBuffer.upsert({
+        where: { key: posixKey },
+        create: {
+          key: posixKey,
+          data: buffer,
+          mimeType,
+        },
+        update: {
+          data: buffer,
+          mimeType,
+        },
+      });
+
+      return `/uploads/${posixKey}`;
+    }
   }
 
   /**
    * Deletes a local or remote object
    */
   static async deleteFile(key: string): Promise<boolean> {
+    const posixKey = key.replace(/\\/g, "/");
+    try {
+      await db.mediaUploadBuffer.delete({ where: { key: posixKey } }).catch(() => {});
+    } catch {
+      // Non-fatal
+    }
+
     try {
       const normalizedDir = path.normalize(this.uploadDir);
       const targetPath = path.normalize(path.resolve(this.uploadDir, key));
