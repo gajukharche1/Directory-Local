@@ -24,6 +24,7 @@
   import ReviewDistribution from "$lib/components/reviews/ReviewDistribution.svelte";
   import OpeningHoursCard from "$lib/components/listing/OpeningHoursCard.svelte";
   import ListingAnalyticsTracker from "$lib/components/analytics/ListingAnalyticsTracker.svelte";
+  import { trackEvent } from "$lib/components/analytics/track-event";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -197,6 +198,7 @@
                   href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${listing.title}, ${listing.address}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onclick={() => trackEvent(listing.id, "DIRECTIONS")}
                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors shadow-xs"
                 >
                   <Navigation class="h-3.5 w-3.5" /> Open in Google Maps
@@ -207,6 +209,7 @@
                     href={listing.website}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onclick={() => trackEvent(listing.id, "WEBSITE")}
                     class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border bg-card text-foreground text-xs font-medium hover:bg-muted transition-colors"
                   >
                     <Globe class="h-3.5 w-3.5 text-muted-foreground" /> Visit Official Website

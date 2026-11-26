@@ -9,6 +9,7 @@
     CheckCircle2,
     Calendar,
   } from "lucide-svelte";
+  import { trackEvent } from "$lib/components/analytics/track-event";
 
   interface Props {
     listingId: string;
@@ -68,16 +69,19 @@
       });
 
       if (res.ok) {
+        trackEvent(listingId, "ENQUIRY");
         isSubmitted = true;
       } else {
         const data = await res.json().catch(() => null);
         if (data?.error) {
           errorMessage = data.error;
         } else {
+          trackEvent(listingId, "ENQUIRY");
           isSubmitted = true;
         }
       }
     } catch {
+      trackEvent(listingId, "ENQUIRY");
       isSubmitted = true;
     } finally {
       isSubmitting = false;
@@ -186,6 +190,7 @@
     {#if cleanPhone}
       <a
         href={`tel:${cleanPhone}`}
+        onclick={() => trackEvent(listingId, "CALL")}
         class="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-border bg-muted/40 hover:bg-muted text-foreground text-xs font-semibold transition-colors"
       >
         <Phone class="h-3.5 w-3.5 text-primary" />
@@ -198,6 +203,7 @@
         href={`https://wa.me/${cleanWhatsApp}`}
         target="_blank"
         rel="noopener noreferrer"
+        onclick={() => trackEvent(listingId, "WHATSAPP")}
         class="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-600/10 text-emerald-600 hover:bg-emerald-600/20 text-xs font-semibold transition-colors"
       >
         <MessageCircle class="h-3.5 w-3.5" />
