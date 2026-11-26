@@ -3,10 +3,15 @@ import { StorageService } from "./storage.service";
 
 export const ALLOWED_MIME_TYPES = [
   "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
   "image/png",
   "image/webp",
   "image/avif",
   "image/svg+xml",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+  "image/ico",
 ];
 
 export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB per file
@@ -77,8 +82,9 @@ export class MediaService {
    * Generates a pre-signed or local storage upload ticket
    */
   static async createUploadTicket(ownerId: string, input: CreateMediaTicketInput) {
-    if (!ALLOWED_MIME_TYPES.includes(input.mimeType)) {
-      throw new Error("Invalid file type. Supported formats: JPG, PNG, WebP, AVIF, SVG.");
+    const normalizedMime = input.mimeType.toLowerCase();
+    if (!ALLOWED_MIME_TYPES.includes(normalizedMime)) {
+      throw new Error("Invalid file type. Supported formats: JPG, PNG, WebP, AVIF, SVG, ICO.");
     }
 
     if (input.bytes > MAX_FILE_SIZE_BYTES) {
@@ -89,12 +95,17 @@ export class MediaService {
       await this.assertCanUploadMedia(ownerId, input.listingId);
     }
 
-    const prefix = input.listingId ? `listings/${input.listingId}` : `users/${ownerId}`;
+    // WordPress-style upload folder structure: YYYY/MM
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const datePrefix = `${year}/${month}`;
+
     const ticket = await StorageService.createUploadTicket(
       input.fileName,
-      input.mimeType,
+      normalizedMime,
       input.bytes,
-      prefix
+      datePrefix
     );
 
     return ticket;
@@ -104,7 +115,8 @@ export class MediaService {
    * Confirms the upload and creates the Media database record
    */
   static async confirmUpload(ownerId: string, input: ConfirmMediaInput) {
-    if (!ALLOWED_MIME_TYPES.includes(input.mimeType)) {
+    const normalizedMime = input.mimeType.toLowerCase();
+    if (!ALLOWED_MIME_TYPES.includes(normalizedMime)) {
       throw new Error("Invalid MIME type.");
     }
 

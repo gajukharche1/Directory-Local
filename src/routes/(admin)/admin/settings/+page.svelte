@@ -850,15 +850,15 @@
               </div>
             {/if}
 
-            <!-- Direct URL Input field for custom/remote CDN URLs -->
+            <!-- Direct URL Input field for custom/remote CDN URLs or uploaded media -->
             <div class="space-y-1">
               <label for="logoUrl" class="text-[11px] font-semibold text-slate-500">Direct Logo URL</label>
               <input
                 id="logoUrl"
                 name="logoUrl"
-                type="url"
+                type="text"
                 bind:value={logoUrl}
-                placeholder="https://.../logo.png"
+                placeholder="/uploads/... or https://..."
                 class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-mono"
               />
             </div>
@@ -962,15 +962,15 @@
               </div>
             {/if}
 
-            <!-- Direct URL Input field for custom/remote CDN URLs -->
+            <!-- Direct URL Input field for custom/remote CDN URLs or uploaded media -->
             <div class="space-y-1">
               <label for="faviconUrl" class="text-[11px] font-semibold text-slate-500">Direct Favicon URL</label>
               <input
                 id="faviconUrl"
                 name="faviconUrl"
-                type="url"
+                type="text"
                 bind:value={faviconUrl}
-                placeholder="https://.../favicon.ico"
+                placeholder="/uploads/... or https://..."
                 class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition font-mono"
               />
             </div>

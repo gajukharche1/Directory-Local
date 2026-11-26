@@ -121,7 +121,7 @@
     <input
       bind:this={fileInput}
       type="file"
-      accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+      accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml,image/x-icon,image/vnd.microsoft.icon,.ico,.png,.jpg,.jpeg,.webp,.svg,.avif"
       multiple
       class="hidden"
       onchange={handleFileInputChange}
@@ -136,7 +136,7 @@
         Click to upload or drag and drop photos
       </p>
       <p class="text-xs text-muted-foreground mt-1">
-        PNG, JPG, WebP, AVIF or SVG (Max 10 MB per file)
+        PNG, JPG, WebP, AVIF, SVG or ICO (Max 10 MB per file)
       </p>
     </div>
   </div>

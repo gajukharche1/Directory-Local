@@ -7,10 +7,12 @@ export const POST: RequestHandler = async ({ request, url, locals }) => {
     return json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const key = url.searchParams.get("key");
-  if (!key) {
+  const rawKey = url.searchParams.get("key");
+  if (!rawKey) {
     return json({ error: "Missing required query parameter: key" }, { status: 400 });
   }
+
+  const key = decodeURIComponent(rawKey);
 
   try {
     const arrayBuffer = await request.arrayBuffer();

@@ -28,13 +28,26 @@ export async function uploadMediaFile(
   file: File,
   options: UploadOptions = {}
 ): Promise<UploadResult> {
+  // Infer or normalize mime type
+  let mimeType = (file.type || "").toLowerCase();
+  if (!mimeType) {
+    const lowerName = file.name.toLowerCase();
+    if (lowerName.endsWith(".ico")) mimeType = "image/x-icon";
+    else if (lowerName.endsWith(".png")) mimeType = "image/png";
+    else if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) mimeType = "image/jpeg";
+    else if (lowerName.endsWith(".webp")) mimeType = "image/webp";
+    else if (lowerName.endsWith(".svg")) mimeType = "image/svg+xml";
+    else if (lowerName.endsWith(".avif")) mimeType = "image/avif";
+    else mimeType = "image/jpeg";
+  }
+
   // Step 1: Request upload ticket
   const ticketRes = await fetch("/api/media/upload-ticket", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       fileName: file.name,
-      mimeType: file.type || "image/jpeg",
+      mimeType,
       bytes: file.size,
       listingId: options.listingId,
       folderId: options.folderId,
@@ -52,6 +65,7 @@ export async function uploadMediaFile(
   // Step 2: Upload file bytes directly via XMLHttpRequest for fine-grained progress
   await new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    xhr.withCredentials = true;
     xhr.open(ticket.method || "POST", ticket.uploadUrl);
 
     if (ticket.headers) {
@@ -92,7 +106,7 @@ export async function uploadMediaFile(
     body: JSON.stringify({
       key: ticket.key,
       url: ticket.publicUrl,
-      mimeType: file.type || "image/jpeg",
+      mimeType,
       bytes: file.size,
       fileName: file.name,
       listingId: options.listingId,

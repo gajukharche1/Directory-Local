@@ -13,12 +13,21 @@ export const GET: RequestHandler = async ({ url, locals }) => {
   const page = Number(url.searchParams.get("page")) || 1;
 
   try {
-    const result = await MediaService.getMerchantMedia(locals.user.id, {
-      folderId: folderId === "null" || folderId === "" ? null : folderId || undefined,
-      search,
-      limit,
-      page,
-    });
+    const isAdminOrMod = locals.user.role === "admin" || locals.user.role === "moderator";
+    const result = isAdminOrMod
+      ? await MediaService.getAdminMedia({
+          folderId: folderId === "null" || folderId === "" ? null : folderId || undefined,
+          search,
+          limit,
+          page,
+          isQuarantined: false,
+        })
+      : await MediaService.getMerchantMedia(locals.user.id, {
+          folderId: folderId === "null" || folderId === "" ? null : folderId || undefined,
+          search,
+          limit,
+          page,
+        });
 
     return json(result);
   } catch (err: any) {

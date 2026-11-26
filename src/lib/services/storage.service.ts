@@ -16,6 +16,7 @@ export class StorageService {
 
   /**
    * Generates a ticket for file upload.
+   * Organizes storage keys using WordPress date-based structure: YYYY/MM/filename-suffix.ext
    * If S3/R2 credentials are set, generates a presigned PUT URL.
    * Otherwise, provides a direct local upload URL fallback.
    */
@@ -23,13 +24,35 @@ export class StorageService {
     fileName: string,
     mimeType: string,
     fileBytes: number,
-    prefix: string = "general"
+    prefix?: string
   ): Promise<StorageTicket> {
-    const ext = path.extname(fileName).toLowerCase() || ".webp";
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const datePrefix = prefix || `${year}/${month}`;
+
+    let ext = path.extname(fileName).toLowerCase();
+    if (!ext) {
+      if (mimeType.includes("icon") || mimeType.includes("ico")) ext = ".ico";
+      else if (mimeType.includes("svg")) ext = ".svg";
+      else if (mimeType.includes("png")) ext = ".png";
+      else if (mimeType.includes("jpeg") || mimeType.includes("jpg")) ext = ".jpg";
+      else ext = ".webp";
+    }
     const cleanExt = ext.startsWith(".") ? ext.slice(1) : ext;
-    const uniqueId = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
-    const sanitizedPrefix = prefix.replace(/[^a-zA-Z0-9_\-\/]/g, "").replace(/^\/+|\/+$/g, "");
-    const objectKey = `${sanitizedPrefix}/${uniqueId}.${cleanExt}`;
+
+    // WordPress-style clean filename slug + unique suffix
+    const rawBase = path.basename(fileName, ext);
+    const sanitizedBase = rawBase
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 50) || "upload";
+
+    const uniqueSuffix = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
+    const sanitizedPrefix = datePrefix.replace(/[^a-zA-Z0-9_\-\/]/g, "").replace(/^\/+|\/+$/g, "");
+    const objectKey = `${sanitizedPrefix}/${sanitizedBase}-${uniqueSuffix}.${cleanExt}`;
 
     const r2Bucket = process.env.STORAGE_BUCKET;
     const r2Endpoint = process.env.STORAGE_ENDPOINT;
@@ -39,7 +62,6 @@ export class StorageService {
 
     // Cloud S3 / Cloudflare R2 Presigned Upload
     if (r2Bucket && r2Endpoint && r2AccessKey && r2SecretKey) {
-      // In production with AWS SDK / S3 Client
       const publicUrl = publicBaseUrl 
         ? `${publicBaseUrl.replace(/\/+$/, "")}/${objectKey}`
         : `${r2Endpoint.replace(/\/+$/, "")}/${r2Bucket}/${objectKey}`;
@@ -56,7 +78,7 @@ export class StorageService {
       };
     }
 
-    // Local Disk Fallback
+    // Local Disk Fallback (WordPress YYYY/MM structure under /uploads/)
     const publicUrl = `/uploads/${objectKey}`;
 
     return {
@@ -70,11 +92,12 @@ export class StorageService {
 
   /**
    * Saves a buffer directly to local storage (for fallback / local dev)
+   * Ensures parent directories (e.g. static/uploads/YYYY/MM/) are created recursively.
    */
   static async saveLocalFile(key: string, buffer: Buffer): Promise<string> {
-    // Path traversal guard
-    const targetPath = path.resolve(this.uploadDir, key);
-    if (!targetPath.startsWith(this.uploadDir)) {
+    const normalizedDir = path.normalize(this.uploadDir);
+    const targetPath = path.normalize(path.resolve(this.uploadDir, key));
+    if (!targetPath.startsWith(normalizedDir)) {
       throw new Error("Invalid path traversal attempted.");
     }
 
@@ -82,7 +105,8 @@ export class StorageService {
     await fs.mkdir(parentDir, { recursive: true });
     await fs.writeFile(targetPath, buffer);
 
-    return `/uploads/${key}`;
+    const posixKey = key.replace(/\\/g, "/");
+    return `/uploads/${posixKey}`;
   }
 
   /**
@@ -90,8 +114,9 @@ export class StorageService {
    */
   static async deleteFile(key: string): Promise<boolean> {
     try {
-      const targetPath = path.resolve(this.uploadDir, key);
-      if (targetPath.startsWith(this.uploadDir)) {
+      const normalizedDir = path.normalize(this.uploadDir);
+      const targetPath = path.normalize(path.resolve(this.uploadDir, key));
+      if (targetPath.startsWith(normalizedDir)) {
         await fs.unlink(targetPath);
         return true;
       }
